@@ -1,11 +1,43 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
+
+// ─── TYPES ────────────────────────────────────────────────────────────────────
+interface Specialty {
+  emoji: string;
+  name: string;
+  desc: string;
+  price: string;
+  tag: string;
+}
+
+interface Testimonial {
+  name: string;
+  text: string;
+  stars: number;
+}
+
+interface RevealProps {
+  children: ReactNode;
+  delay?: number;
+  from?: "bottom" | "left" | "right" | "none";
+  style?: CSSProperties;
+}
+
+type BuffetKey = "Čorbe" | "Salate" | "Glavna jela" | "Jelo dana";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
-const NAV = ["Početna", "O nama", "Jelovnik", "Galerija", "Kontakt"];
+const NAV: string[] = ["Početna", "O nama", "Jelovnik", "Galerija", "Kontakt"];
 
-const SPECIALTIES = [
+const NAV_MAP: Record<string, string> = {
+  "Početna": "home",
+  "O nama": "o-nama",
+  "Jelovnik": "jelovnik",
+  "Galerija": "galerija",
+  "Kontakt": "kontakt",
+};
+
+const SPECIALTIES: Specialty[] = [
   { emoji: "🥩", name: "Ćevapi", desc: "Domaći ćevapi od svežeg mesa, serviran sa somun hlebom, lukom i kajmakom – pravi balkanski klasik.", price: "od 8,90 €", tag: "Najpopularnije" },
   { emoji: "🍖", name: "Karađorđeva Šnicla", desc: "Sočna svinjska šnicla punjena kajmakom, pohana i zlatno-pečena. Servirana sa pomfritom i friškim salatom.", price: "13,90 €", tag: "" },
   { emoji: "🥓", name: "Pljeskavica", desc: "Velika domaća pljeskavica sa somun hlebom, ajvarom i lukom – ponos roštiljske kuhinje.", price: "od 6,90 €", tag: "Domaći recept" },
@@ -14,54 +46,111 @@ const SPECIALTIES = [
   { emoji: "🥗", name: "Šopska Salata", desc: "Klasična balkanska salata sa paradajzom, krastavcem, paprikom i svežim sirom – savršen pratilac uz roštilj.", price: "4,50 €", tag: "" },
 ];
 
-const BUFFET = {
-  "Čorbe": ["Pileća čorba", "Pasulj sa rebarcima"],
-  "Salate": ["Kupus salata", "Kiseli kupus", "Paradajz salata", "Šopska salata"],
+const BUFFET: Record<BuffetKey, string[]> = {
+  "Čorbe":       ["Pileća čorba", "Pasulj sa rebarcima"],
+  "Salate":      ["Kupus salata", "Kiseli kupus", "Paradajz salata", "Šopska salata"],
   "Glavna jela": ["Punjene paprike", "Sarma", "Pečene kobasice", "Prženi krompir"],
-  "Jelo dana": ["Menja se svaki dan: musaka, gulaš, rizoto, ćufte, špageti…"],
+  "Jelo dana":   ["Menja se svaki dan: musaka, gulaš, rizoto, ćufte, špageti…"],
 };
 
-const TESTIMONIALS = [
+const TESTIMONIALS: Testimonial[] = [
   { name: "Dragan M.", text: "Ćevapi kao kod moje bake u Nišu. Ovde se oseća prava balkanska duša, i hrana i usluga su savršeni.", stars: 5 },
-  { name: "Ana P.", text: "Karađorđeva šnicla je bila fenomenalna! Brzo, ukusno i po fer cenama. Svakako se vraćam.", stars: 5 },
+  { name: "Ana P.",    text: "Karađorđeva šnicla je bila fenomenalna! Brzo, ukusno i po fer cenama. Svakako se vraćam.", stars: 5 },
   { name: "Marko S.", text: "Buffet je neverovatna vrednost za novac. Porcije ogromne, hrana domaća. Preporuka za sve u Beču!", stars: 5 },
 ];
 
-function useInView(ref, threshold = 0.1) {
-  const [visible, setVisible] = useState(false);
+const GALLERY_ITEMS: { e: string; l: string; c: string }[] = [
+  { e: "🥩", l: "Svež roštilj",    c: "gtall" },
+  { e: "🍽️", l: "Serviranje",      c: "" },
+  { e: "🏠", l: "Naš enterijer",   c: "" },
+  { e: "🌶️", l: "Domaći kajmak",  c: "gwide" },
+  { e: "🍷", l: "Balkanska vina",  c: "" },
+  { e: "🥗", l: "Šopska salata",   c: "" },
+];
+
+const CONTACT_BLOCKS: [string, string, string][] = [
+  ["📍", "Adresa",  "Musterstraße 12\n1010 Wien, Austrija"],
+  ["📞", "Telefon", "+43 1 234 56 78"],
+  ["✉️", "Email",   "info@juzni-merak.at"],
+];
+
+const HOURS: [string, string][] = [
+  ["Pon – Čet", "11:00 – 22:00"],
+  ["Pet – Sub", "11:00 – 23:00"],
+  ["Nedela",    "12:00 – 21:00"],
+];
+
+const PILLARS: [string, string, string][] = [
+  ["🥩", "Svežina",          "Samo najsvežiji sastojci, svaki dan"],
+  ["🔥", "Tradicija",        "Originalni balkanski recepti"],
+  ["❤️", "Gostoprimljivost", "Svaki gost je naša porodica"],
+];
+
+const HERO_STATS: [string, string][] = [
+  ["18+",  "Godina tradicije"],
+  ["50+",  "Jela na meniju"],
+  ["4.7★", "Ocena gostiju"],
+];
+
+const GUESTS_COUNT: (number | string)[] = [1, 2, 3, 4, 5, 6, 7, "8+"];
+const OCCASIONS: string[] = ["Obična večera", "Rođendan", "Godišnjica", "Poslovni ručak", "Grupni događaj"];
+
+// ─── HOOKS ───────────────────────────────────────────────────────────────────
+function useInView(ref: React.RefObject<HTMLElement | null>, threshold = 0.1): boolean {
+  const [visible, setVisible] = useState<boolean>(false);
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold });
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold }
+    );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
-  }, []);
+  }, [ref, threshold]);
   return visible;
 }
 
-function Reveal({ children, delay = 0, from = "bottom", style = {} }) {
-  const ref = useRef();
-  const v = useInView(ref);
-  const t = { bottom: "translateY(35px)", left: "translateX(-30px)", right: "translateX(30px)", none: "none" };
+// ─── REVEAL COMPONENT ────────────────────────────────────────────────────────
+function Reveal({ children, delay = 0, from = "bottom", style = {} }: RevealProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const visible = useInView(ref);
+
+  const transforms: Record<string, string> = {
+    bottom: "translateY(35px)",
+    left:   "translateX(-30px)",
+    right:  "translateX(30px)",
+    none:   "none",
+  };
+
   return (
-    <div ref={ref} style={{ opacity: v ? 1 : 0, transform: v ? "none" : t[from], transition: `opacity .75s ease ${delay}ms, transform .75s ease ${delay}ms`, ...style }}>
+    <div
+      ref={ref}
+      style={{
+        opacity:    visible ? 1 : 0,
+        transform:  visible ? "none" : transforms[from],
+        transition: `opacity .75s ease ${delay}ms, transform .75s ease ${delay}ms`,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function JuzniMerak() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [activeTab, setActiveTab] = useState("Čorbe");
+  const [menuOpen,  setMenuOpen]  = useState<boolean>(false);
+  const [scrolled,  setScrolled]  = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<BuffetKey>("Čorbe");
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", h);
-    return () => window.removeEventListener("scroll", h);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const goto = (id) => {
-    const map = { "Početna": "home", "O nama": "o-nama", "Jelovnik": "jelovnik", "Galerija": "galerija", "Kontakt": "kontakt" };
-    document.getElementById(map[id] || id)?.scrollIntoView({ behavior: "smooth" });
+  const goto = (label: string): void => {
+    const id = NAV_MAP[label] ?? label;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     setMenuOpen(false);
   };
 
@@ -69,7 +158,7 @@ export default function JuzniMerak() {
     <>
       <style>{CSS}</style>
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <header className={`nav ${scrolled ? "nav--solid" : ""}`}>
         <div className="nav__logo" onClick={() => goto("Početna")}>
           <span className="nav__flame">♨</span>
@@ -78,13 +167,21 @@ export default function JuzniMerak() {
             <div className="nav__sub">Balkanski Roštilj · Beč</div>
           </div>
         </div>
+
         <nav className={`nav__links ${menuOpen ? "open" : ""}`}>
-          {NAV.map(n => <a key={n} className="nav__link" onClick={() => goto(n)}>{n}</a>)}
-          <button className="btn btn--gold mob-reserve" onClick={() => goto("Kontakt")}>Rezervacija</button>
+          {NAV.map((n) => (
+            <a key={n} className="nav__link" onClick={() => goto(n)}>{n}</a>
+          ))}
+          <button className="btn btn--gold mob-reserve" onClick={() => goto("Kontakt")}>
+            Rezervacija
+          </button>
         </nav>
+
         <div className="nav__right">
-          <button className="btn btn--gold desk-reserve" onClick={() => goto("Kontakt")}>Rezervacija stola</button>
-          <button className="burger" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="btn btn--gold desk-reserve" onClick={() => goto("Kontakt")}>
+            Rezervacija stola
+          </button>
+          <button className="burger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Meni">
             <span style={{ transform: menuOpen ? "rotate(45deg) translate(5px,5px)" : "none" }} />
             <span style={{ opacity: menuOpen ? 0 : 1 }} />
             <span style={{ transform: menuOpen ? "rotate(-45deg) translate(5px,-5px)" : "none" }} />
@@ -92,33 +189,48 @@ export default function JuzniMerak() {
         </div>
       </header>
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section id="home" className="hero">
         <div className="hero__bg">
           <div className="hero__glow" />
           <div className="hero__grid" />
         </div>
+
         <div className="hero__body">
           <div className="hero__badge">🔥 Autentična balkanska kuhinja · Beč</div>
-          <h1 className="hero__h1">Južni<em>Merak</em></h1>
-          <div className="hero__rule"><span /><span className="hero__diamond">✦</span><span /></div>
+          <h1 className="hero__h1">
+            Južni<em>Merak</em>
+          </h1>
+          <div className="hero__rule">
+            <span /><span className="hero__diamond">✦</span><span />
+          </div>
           <p className="hero__tagline">Gde balkanski ukus postaje umetnost</p>
           <div className="hero__btns">
-            <button className="btn btn--gold btn--lg" onClick={() => goto("Jelovnik")}>Pogledaj jelovnik</button>
-            <button className="btn btn--outline btn--lg" onClick={() => goto("Kontakt")}>Rezerviši sto</button>
+            <button className="btn btn--gold btn--lg" onClick={() => goto("Jelovnik")}>
+              Pogledaj jelovnik
+            </button>
+            <button className="btn btn--outline btn--lg" onClick={() => goto("Kontakt")}>
+              Rezerviši sto
+            </button>
           </div>
         </div>
+
         <div className="hero__scroll" onClick={() => goto("O nama")}>
-          <span>Skroluj</span><div className="hero__line" />
+          <span>Skroluj</span>
+          <div className="hero__line" />
         </div>
+
         <div className="hero__band">
-          {[["18+", "Godina tradicije"], ["50+", "Jela na meniju"], ["4.7★", "Ocena gostiju"]].map(([n, l]) => (
-            <div key={l} className="hero__stat"><strong>{n}</strong><span>{l}</span></div>
+          {HERO_STATS.map(([n, l]) => (
+            <div key={l} className="hero__stat">
+              <strong>{n}</strong>
+              <span>{l}</span>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* O NAMA */}
+      {/* ── O NAMA ── */}
       <section id="o-nama" className="sec sec--light">
         <div className="wrap">
           <div className="about">
@@ -128,21 +240,37 @@ export default function JuzniMerak() {
                   <span>🍖</span>
                   <div className="about__main-label">Roštilj &amp; Tradicija</div>
                 </div>
-                <div className="about__accent"><span>🌶️</span><div>Domaći recepti</div></div>
+                <div className="about__accent">
+                  <span>🌶️</span>
+                  <div>Domaći recepti</div>
+                </div>
                 <div className="about__frame" />
               </div>
             </Reveal>
+
             <Reveal from="right" delay={100}>
               <div className="about__txt">
                 <p className="lbl">O nama</p>
-                <h2 className="sh">Balkanski duh<br /><em>u srcu Beča</em></h2>
-                <p className="ap">Dobrodošli u <strong>Južni Merak</strong> – restoran gde se oseća prava balkanska gostoprimljivost. Naša kuhinja donosi autentične ukuse Balkana sa svežim namirnicama, originalnim receptima i atmosferom koja podseća na dom.</p>
-                <p className="ap">Svako jelo pripremamo sa ljubavlju i pažnjom, baš kao što su to radile naše bake. Meso začinjeno po originalnim receptima, svakodnevno sveže – to je naš zavet gostima.</p>
+                <h2 className="sh">
+                  Balkanski duh<br /><em>u srcu Beča</em>
+                </h2>
+                <p className="ap">
+                  Dobrodošli u <strong>Južni Merak</strong> – restoran gde se oseća prava balkanska
+                  gostoprimljivost. Naša kuhinja donosi autentične ukuse Balkana sa svežim namirnicama,
+                  originalnim receptima i atmosferom koja podseća na dom.
+                </p>
+                <p className="ap">
+                  Svako jelo pripremamo sa ljubavlju i pažnjom, baš kao što su to radile naše bake.
+                  Meso začinjeno po originalnim receptima, svakodnevno sveže – to je naš zavet gostima.
+                </p>
                 <div className="pillars">
-                  {[["🥩", "Svežina", "Samo najsvežiji sastojci, svaki dan"], ["🔥", "Tradicija", "Originalni balkanski recepti"], ["❤️", "Gostoprimljivost", "Svaki gost je naša porodica"]].map(([ic, t, d]) => (
+                  {PILLARS.map(([ic, t, d]) => (
                     <div key={t} className="pillar">
                       <div className="pillar__ic">{ic}</div>
-                      <div><div className="pillar__t">{t}</div><div className="pillar__d">{d}</div></div>
+                      <div>
+                        <div className="pillar__t">{t}</div>
+                        <div className="pillar__d">{d}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -152,7 +280,7 @@ export default function JuzniMerak() {
         </div>
       </section>
 
-      {/* JELOVNIK */}
+      {/* ── JELOVNIK ── */}
       <section id="jelovnik" className="sec sec--dark">
         <div className="wrap">
           <Reveal style={{ textAlign: "center" }}>
@@ -160,6 +288,7 @@ export default function JuzniMerak() {
             <h2 className="sh sh--light">Specijaliteti <em>kuće</em></h2>
             <p className="sub">Svako jelo radi se svaki dan sveže, po starim receptima Balkana.</p>
           </Reveal>
+
           <div className="mgrid">
             {SPECIALTIES.map((s, i) => (
               <Reveal key={s.name} delay={i * 80}>
@@ -168,19 +297,24 @@ export default function JuzniMerak() {
                   <div className="mcard__emo">{s.emoji}</div>
                   <div className="mcard__name">{s.name}</div>
                   <div className="mcard__desc">{s.desc}</div>
-                  <div className="mcard__foot"><span className="mcard__price">{s.price}</span></div>
+                  <div className="mcard__foot">
+                    <span className="mcard__price">{s.price}</span>
+                  </div>
                 </div>
               </Reveal>
             ))}
           </div>
+
           <Reveal delay={200} style={{ textAlign: "center", marginTop: "3rem" }}>
             <p className="menu-note">Kompletan jelovnik dolazi uskoro · Menjakarta će biti dodata</p>
-            <button className="btn btn--gold btn--lg" onClick={() => goto("Kontakt")}>Rezerviši sto →</button>
+            <button className="btn btn--gold btn--lg" onClick={() => goto("Kontakt")}>
+              Rezerviši sto →
+            </button>
           </Reveal>
         </div>
       </section>
 
-      {/* BUFFET */}
+      {/* ── BUFFET ── */}
       <section className="sec sec--fire">
         <div className="wrap">
           <div className="buff">
@@ -188,7 +322,10 @@ export default function JuzniMerak() {
               <div className="buff__info">
                 <p className="lbl lbl--gold">Svaki dan</p>
                 <h2 className="sh sh--light">Dnevni <em>Bife</em></h2>
-                <p className="buff__intro">Uživajte u našem dnevnom bifeju od <strong>11:00 do 18:00</strong> sa raznovrsnim jelima balkanske kuhinje, sve za jednu cenu.</p>
+                <p className="buff__intro">
+                  Uživajte u našem dnevnom bifeju od <strong>11:00 do 18:00</strong> sa raznovrsnim
+                  jelima balkanske kuhinje, sve za jednu cenu.
+                </p>
                 <div className="buff__prices">
                   <div className="bpcard">
                     <div className="bpcard__day">Pon – Pet</div>
@@ -201,19 +338,30 @@ export default function JuzniMerak() {
                     <div className="bpcard__note">po osobi</div>
                   </div>
                 </div>
-                <button className="btn btn--gold" style={{ marginTop: "2rem" }} onClick={() => goto("Kontakt")}>Saznaj više →</button>
+                <button className="btn btn--gold" style={{ marginTop: "2rem" }} onClick={() => goto("Kontakt")}>
+                  Saznaj više →
+                </button>
               </div>
             </Reveal>
+
             <Reveal from="right" delay={100}>
               <div className="btabs">
                 <div className="btabs__btns">
-                  {Object.keys(BUFFET).map(k => (
-                    <button key={k} className={`btab ${activeTab === k ? "btab--on" : ""}`} onClick={() => setActiveTab(k)}>{k}</button>
+                  {(Object.keys(BUFFET) as BuffetKey[]).map((k) => (
+                    <button
+                      key={k}
+                      className={`btab ${activeTab === k ? "btab--on" : ""}`}
+                      onClick={() => setActiveTab(k)}
+                    >
+                      {k}
+                    </button>
                   ))}
                 </div>
                 <div className="btabs__body">
-                  {BUFFET[activeTab].map(item => (
-                    <div key={item} className="bitem"><span>◆</span>{item}</div>
+                  {BUFFET[activeTab].map((item) => (
+                    <div key={item} className="bitem">
+                      <span>◆</span>{item}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -222,7 +370,7 @@ export default function JuzniMerak() {
         </div>
       </section>
 
-      {/* GALERIJA */}
+      {/* ── GALERIJA ── */}
       <section id="galerija" className="sec sec--light">
         <div className="wrap">
           <Reveal style={{ textAlign: "center" }}>
@@ -230,14 +378,7 @@ export default function JuzniMerak() {
             <h2 className="sh">Atmosfera &amp; <em>Ukusi</em></h2>
           </Reveal>
           <div className="gallery">
-            {[
-              { e: "🥩", l: "Svež roštilj", c: "gtall" },
-              { e: "🍽️", l: "Serviranje", c: "" },
-              { e: "🏠", l: "Naš enterijer", c: "" },
-              { e: "🌶️", l: "Domaći kajmak", c: "gwide" },
-              { e: "🍷", l: "Balkanska vina", c: "" },
-              { e: "🥗", l: "Šopska salata", c: "" },
-            ].map((g, i) => (
+            {GALLERY_ITEMS.map((g, i) => (
               <Reveal key={g.l} delay={i * 60} style={{ display: "contents" }}>
                 <div className={`gitem ${g.c}`}>
                   <span className="gitem__e">{g.e}</span>
@@ -249,7 +390,7 @@ export default function JuzniMerak() {
         </div>
       </section>
 
-      {/* UTISCI */}
+      {/* ── UTISCI ── */}
       <section className="sec sec--burg">
         <div className="wrap">
           <Reveal style={{ textAlign: "center" }}>
@@ -260,7 +401,7 @@ export default function JuzniMerak() {
             {TESTIMONIALS.map((t, i) => (
               <Reveal key={t.name} delay={i * 120}>
                 <div className="rcard">
-                  <div className="rcard__q">"</div>
+                  <div className="rcard__q">&ldquo;</div>
                   <p className="rcard__txt">{t.text}</p>
                   <div className="rcard__stars">{"★".repeat(t.stars)}</div>
                   <div className="rcard__name">— {t.name}</div>
@@ -271,36 +412,49 @@ export default function JuzniMerak() {
         </div>
       </section>
 
-      {/* KONTAKT */}
+      {/* ── KONTAKT ── */}
       <section id="kontakt" className="sec sec--light">
         <div className="wrap">
           <Reveal style={{ textAlign: "center" }}>
             <p className="lbl">Posetite nas</p>
             <h2 className="sh">Rezervacija &amp; <em>Kontakt</em></h2>
           </Reveal>
+
           <div className="cgrid">
             <Reveal from="left" delay={100}>
               <div className="cinfo">
-                {[["📍", "Adresa", "Musterstraße 12\n1010 Wien, Austrija"], ["📞", "Telefon", "+43 1 234 56 78"], ["✉️", "Email", "info@juzni-merak.at"]].map(([ic, l, v]) => (
+                {CONTACT_BLOCKS.map(([ic, l, v]) => (
                   <div key={l} className="cblock">
                     <div className="cicon">{ic}</div>
-                    <div><div className="clbl">{l}</div><div className="cval">{v}</div></div>
+                    <div>
+                      <div className="clbl">{l}</div>
+                      <div className="cval">{v}</div>
+                    </div>
                   </div>
                 ))}
+
                 <div className="clbl" style={{ marginBottom: ".7rem" }}>Radno vreme</div>
                 <table className="htable">
                   <tbody>
-                    {[["Pon – Čet", "11:00 – 22:00"], ["Pet – Sub", "11:00 – 23:00"], ["Nedela", "12:00 – 21:00"]].map(([d, t]) => (
-                      <tr key={d}><td>{d}</td><td>{t}</td></tr>
+                    {HOURS.map(([d, t]) => (
+                      <tr key={d}>
+                        <td>{d}</td>
+                        <td>{t}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
+
                 <div className="delivery">
                   <span>🛵</span>
-                  <div><strong>Dostava u celom Beču</strong><div>Svakog dana od 11:00 – 19:00</div></div>
+                  <div>
+                    <strong>Dostava u celom Beču</strong>
+                    <div>Svakog dana od 11:00 – 19:00</div>
+                  </div>
                 </div>
               </div>
             </Reveal>
+
             <Reveal from="right" delay={150}>
               <div className="rform">
                 <h3 className="rform__title">Rezervišite Vaš sto</h3>
@@ -319,23 +473,38 @@ export default function JuzniMerak() {
                 <div className="fr2">
                   <div className="fg">
                     <label>Broj gostiju</label>
-                    <select>{[1,2,3,4,5,6,7,"8+"].map(n => <option key={n}>{n} {n===1?"gost":"gosta"}</option>)}</select>
+                    <select>
+                      {GUESTS_COUNT.map((n) => (
+                        <option key={String(n)}>{n} {n === 1 ? "gost" : "gosta"}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="fg">
                     <label>Povod</label>
-                    <select>{["Obična večera","Rođendan","Godišnjica","Poslovni ručak","Grupni događaj"].map(o => <option key={o}>{o}</option>)}</select>
+                    <select>
+                      {OCCASIONS.map((o) => (
+                        <option key={o}>{o}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-                <div className="fg"><label>Posebne napomene</label><textarea placeholder="Alergije, posebne želje, slavlje…" rows={3} /></div>
-                <button className="btn btn--gold btn--lg" style={{ width: "100%", marginTop: ".5rem" }}>✓ Potvrdi rezervaciju</button>
-                <p className="fnote">Ili nas pozovite: <strong>+43 1 234 56 78</strong> · Prihvatamo od 3+ osoba</p>
+                <div className="fg">
+                  <label>Posebne napomene</label>
+                  <textarea placeholder="Alergije, posebne želje, slavlje…" rows={3} />
+                </div>
+                <button className="btn btn--gold btn--lg" style={{ width: "100%", marginTop: ".5rem" }}>
+                  ✓ Potvrdi rezervaciju
+                </button>
+                <p className="fnote">
+                  Ili nas pozovite: <strong>+43 1 234 56 78</strong> · Prihvatamo od 3+ osoba
+                </p>
               </div>
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer className="foot">
         <div className="wrap">
           <div className="fgrid">
@@ -345,12 +514,18 @@ export default function JuzniMerak() {
               <hr className="fdiv" />
               <p className="fdesc">Autentična balkanska kuhinja sa srcem – više od 18 godina u Beču.</p>
               <div className="fsocial">
-                {["📘","📸","🐦"].map(ic => <a key={ic} href="#" className="fsoc">{ic}</a>)}
+                {["📘", "📸", "🐦"].map((ic) => (
+                  <a key={ic} href="#" className="fsoc">{ic}</a>
+                ))}
               </div>
             </div>
             <div>
               <div className="fh">Navigacija</div>
-              <ul className="fnav">{NAV.map(n => <li key={n} onClick={() => goto(n)}>{n}</li>)}</ul>
+              <ul className="fnav">
+                {NAV.map((n) => (
+                  <li key={n} onClick={() => goto(n)}>{n}</li>
+                ))}
+              </ul>
             </div>
             <div>
               <div className="fh">Kontakt</div>
@@ -361,7 +536,9 @@ export default function JuzniMerak() {
               </ul>
               <div className="fh" style={{ marginTop: "1.5rem" }}>Radno vreme</div>
               <ul className="fnav">
-                <li>Pon–Čet: 11–22h</li><li>Pet–Sub: 11–23h</li><li>Ned: 12–21h</li>
+                <li>Pon–Čet: 11–22h</li>
+                <li>Pet–Sub: 11–23h</li>
+                <li>Ned: 12–21h</li>
               </ul>
             </div>
           </div>
@@ -375,6 +552,7 @@ export default function JuzniMerak() {
   );
 }
 
+// ─── STYLES ──────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Raleway:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -386,9 +564,9 @@ const CSS = `
 html{scroll-behavior:smooth;}
 body{font-family:'Raleway',sans-serif;background:var(--cr);color:var(--tx);overflow-x:hidden;}
 body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");opacity:.5;mix-blend-mode:overlay;}
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+  opacity:.5;mix-blend-mode:overlay;}
 
-/* NAV */
 .nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:80px;transition:background .4s,box-shadow .4s;}
 .nav--solid{background:rgba(19,11,5,.97);backdrop-filter:blur(16px);box-shadow:0 2px 40px rgba(0,0,0,.4);}
 .nav__logo{display:flex;align-items:center;gap:.9rem;cursor:pointer;}
@@ -400,10 +578,10 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .nav__link::after{content:'';position:absolute;bottom:0;left:0;height:1px;width:0;background:var(--gold);transition:width .3s;}
 .nav__link:hover{color:var(--gold);}.nav__link:hover::after{width:100%;}
 .nav__right{display:flex;align-items:center;gap:1rem;}
-.mob-reserve{display:none;}.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.mob-reserve{display:none;}
+.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
 .burger span{display:block;width:24px;height:2px;background:var(--cr);transition:.3s;transform-origin:center;}
 
-/* BUTTONS */
 .btn{padding:.8rem 2rem;font-family:'Raleway',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;border:none;cursor:pointer;transition:all .25s;}
 .btn--gold{background:var(--gold);color:var(--dk);}
 .btn--gold:hover{background:var(--goldl);transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,151,58,.35);}
@@ -411,7 +589,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .btn--outline:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
 .btn--lg{padding:1rem 2.8rem;font-size:.8rem;}
 
-/* HERO */
 .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(160deg,#0D0600 0%,#1E0A05 40%,#3D0E14 80%,#1A0508 100%);}
 .hero__bg{position:absolute;inset:0;}
 .hero__glow{position:absolute;bottom:-20%;left:50%;transform:translateX(-50%);width:120vw;height:80vh;border-radius:50%;background:radial-gradient(ellipse at 50% 100%,rgba(180,70,20,.35) 0%,rgba(100,20,10,.2) 40%,transparent 70%);animation:gp 4s ease-in-out infinite;}
@@ -437,7 +614,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .hero__stat span{font-size:.65rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,236,215,.4);margin-top:.2rem;display:block;}
 @keyframes fu{from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:none;}}
 
-/* SHARED */
 .sec{padding:7rem 2rem;}
 .sec--light{background:var(--cr);}
 .sec--dark{background:var(--dk2);}
@@ -452,7 +628,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .sh--light em{color:var(--gold);}
 .sub{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:rgba(245,236,215,.6);margin-top:.8rem;}
 
-/* ABOUT */
 .about{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;margin-top:4rem;}
 .about__vis{position:relative;height:480px;}
 .about__main{position:absolute;inset:0 60px 60px 0;background:linear-gradient(135deg,var(--burg),var(--dk));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;}
@@ -469,7 +644,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .pillar__t{font-weight:700;font-size:.85rem;letter-spacing:.5px;color:var(--dk);margin-bottom:.2rem;}
 .pillar__d{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--txs);}
 
-/* MENU */
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;margin-top:4rem;background:rgba(201,151,58,.1);border:1px solid rgba(201,151,58,.1);}
 .mcard{background:var(--dk2);padding:2.2rem;display:flex;flex-direction:column;gap:.8rem;position:relative;transition:background .35s;}
 .mcard:hover{background:#281208;}
@@ -481,7 +655,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .mcard__price{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--gold);}
 .menu-note{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(245,236,215,.35);font-size:1rem;margin-bottom:1.5rem;}
 
-/* BUFFET */
 .buff{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:start;}
 .buff__intro{font-family:'Cormorant Garamond',serif;font-size:1.15rem;line-height:1.8;color:rgba(245,236,215,.65);margin-top:1rem;}
 .buff__intro strong{color:var(--gold);}
@@ -500,7 +673,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .bitem{display:flex;gap:.8rem;align-items:center;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:rgba(245,236,215,.75);padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .bitem span{color:var(--gold);font-size:.6rem;}
 
-/* GALLERY */
 .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4rem;}
 .gitem{background:linear-gradient(135deg,var(--burg),var(--dk));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;transition:transform .35s;aspect-ratio:4/3;}
 .gitem:hover{transform:scale(1.03);z-index:2;}
@@ -510,7 +682,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .gitem__e{font-size:3.5rem;position:relative;z-index:1;}
 .gitem__ov{position:absolute;inset:0;background:rgba(92,21,32,.8);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;font-family:'Playfair Display',serif;font-style:italic;color:var(--cr);font-size:1.1rem;}
 
-/* REVIEWS */
 .revs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:4rem;}
 .rcard{padding:2.5rem;border:1px solid rgba(201,151,58,.2);position:relative;background:rgba(0,0,0,.15);}
 .rcard__q{position:absolute;top:-5px;left:1.5rem;font-family:'Playfair Display',serif;font-size:6rem;color:rgba(201,151,58,.1);line-height:1;}
@@ -518,9 +689,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .rcard__stars{color:var(--gold);letter-spacing:3px;font-size:.9rem;}
 .rcard__name{font-family:'Raleway',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:.7rem;}
 
-/* CONTACT */
 .cgrid{display:grid;grid-template-columns:1fr 1.3fr;gap:5rem;margin-top:4rem;align-items:start;}
-.cinfo{}
 .cblock{display:flex;gap:1.2rem;align-items:flex-start;margin-bottom:2rem;}
 .cicon{width:48px;height:48px;flex-shrink:0;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
 .clbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--terra);margin-bottom:.3rem;}
@@ -543,7 +712,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .fg textarea{resize:vertical;}
 .fnote{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--txs);text-align:center;margin-top:1rem;font-style:italic;}
 
-/* FOOTER */
 .foot{background:var(--dk);padding:5rem 2rem 2rem;border-top:1px solid rgba(201,151,58,.1);}
 .fgrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:4rem;}
 .flogo{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gold);display:flex;align-items:center;gap:.5rem;}
@@ -560,7 +728,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
 .fbot{margin-top:3rem;padding-top:1.5rem;border-top:1px solid rgba(201,151,58,.08);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
 .fbot span{font-size:.65rem;color:rgba(245,236,215,.2);letter-spacing:1px;}
 
-/* MOBILE */
 @media(max-width:900px){
   .nav{padding:0 1.5rem;}
   .nav__links{display:none;}
