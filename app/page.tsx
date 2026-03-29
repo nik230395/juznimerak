@@ -2,756 +2,956 @@
 
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
-interface Specialty {
-  emoji: string;
-  name: string;
-  desc: string;
-  price: string;
-  tag: string;
-}
+interface MenuItem  { name: string; subtitle?: string; price: string; allergens?: string; }
+interface MenuCat   { key: string; label: string; emoji: string; items: MenuItem[]; }
+interface RevealProps { children: ReactNode; delay?: number; style?: CSSProperties; }
 
-interface Testimonial {
-  name: string;
-  text: string;
-  stars: number;
-}
-
-interface RevealProps {
-  children: ReactNode;
-  delay?: number;
-  from?: "bottom" | "left" | "right" | "none";
-  style?: CSSProperties;
-}
-
-type BuffetKey = "Čorbe" | "Salate" | "Glavna jela" | "Jelo dana";
-
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-const NAV: string[] = ["Početna", "O nama", "Jelovnik", "Galerija", "Kontakt"];
-
-const NAV_MAP: Record<string, string> = {
-  "Početna": "home",
-  "O nama": "o-nama",
-  "Jelovnik": "jelovnik",
-  "Galerija": "galerija",
-  "Kontakt": "kontakt",
-};
-
-const SPECIALTIES: Specialty[] = [
-  { emoji: "🥩", name: "Ćevapi", desc: "Domaći ćevapi od svežeg mesa, serviran sa somun hlebom, lukom i kajmakom – pravi balkanski klasik.", price: "od 8,90 €", tag: "Najpopularnije" },
-  { emoji: "🍖", name: "Karađorđeva Šnicla", desc: "Sočna svinjska šnicla punjena kajmakom, pohana i zlatno-pečena. Servirana sa pomfritom i friškim salatom.", price: "13,90 €", tag: "" },
-  { emoji: "🥓", name: "Pljeskavica", desc: "Velika domaća pljeskavica sa somun hlebom, ajvarom i lukom – ponos roštiljske kuhinje.", price: "od 6,90 €", tag: "Domaći recept" },
-  { emoji: "🍲", name: "Ispod Sača", desc: "Teletina ili jagnjetina dinstana ispod sača po starom receptu – nežno meso koje se topi u ustima.", price: "od 16,90 €", tag: "Specijalitet kuće" },
-  { emoji: "🌶️", name: "Mešano Meso", desc: "Kombinovani roštiljski tanjir za prave mesojede – ćevapi, pljeskavica, kobasica i šnicla na jednom tanjiru.", price: "18,90 €", tag: "" },
-  { emoji: "🥗", name: "Šopska Salata", desc: "Klasična balkanska salata sa paradajzom, krastavcem, paprikom i svežim sirom – savršen pratilac uz roštilj.", price: "4,50 €", tag: "" },
+const MENU: MenuCat[] = [
+  { key: "rostilj", label: "Roštilj", emoji: "🔥", items: [
+    { name: "Mešano meso",              subtitle: "Grill Mix für 1 Person",       price: "10,90 €" },
+    { name: "Pljeskavica",              subtitle: "Fleischlaibchen",              price: "6,90 €" },
+    { name: "Punjena pljeskavica",      subtitle: "Gefüllte Fleischlaibchen",     price: "11,90 €", allergens: "D" },
+    { name: "Ćevapi 200 / 400 g",                                                 price: "6,90 / 10,90 €" },
+    { name: "Svinjski vrat 200 / 400 g",subtitle: "Schweinssteaks",              price: "6,90 / 10,90 €" },
+    { name: "Paštica 200 / 400 g",      subtitle: "Bauchfleisch",                price: "6,90 / 10,90 €" },
+    { name: "Batk 200 / 400 g",         subtitle: "Hühnenbein",                  price: "6,90 / 10,90 €" },
+    { name: "Kobasice 200 / 400 g",     subtitle: "Grillwürstel",                price: "6,90 / 10,90 €" },
+    { name: "Punjena piletina",         subtitle: "Gefüllte Hühnerbrust",        price: "13,00 €" },
+    { name: "Punjena vešalica 400 g",   subtitle: "Gefüllte Karre",              price: "13,90 €", allergens: "G" },
+    { name: "Bela vešalica 200 / 400 g",subtitle: "Weißes Karee",               price: "6,90 / 10,90 €" },
+    { name: "Dinklave vešalica",        subtitle: "Gänsebraten Karree",          price: "11,00 €" },
+    { name: "Svinjski kotopić",         subtitle: "Grillgeflügel vom Schwein",   price: "6,90 / 10,90 €" },
+  ]},
+  { key: "specijaliteti", label: "Specijaliteti", emoji: "⭐", items: [
+    { name: "Karađorđeva šnicla",       subtitle: "Karađorđeva Schnitzel",       price: "14,90 €", allergens: "A,C,G" },
+    { name: "Bečka šnicla",             subtitle: "Wiener Schnitzel",            price: "12,90 €" },
+    { name: "Rostfleisch",                                                         price: "14,90 €" },
+    { name: "Pečena piletina",          subtitle: "Hühnerbraten",               price: "15,90 €", allergens: "G" },
+    { name: "Meso ispod sača za 2",     subtitle: "Für 2 Personen",             price: "19,90 €" },
+    { name: "Punjene paprike sa sirom", subtitle: "Gefüllte Paprika mit Käse", price: "8,90 €", allergens: "A,C,G" },
+  ]},
+  { key: "salate", label: "Salate", emoji: "🥗", items: [
+    { name: "Šmarski mix",              subtitle: "für 4 Personen",              price: "13,90 €", allergens: "G" },
+    { name: "Šopska salata",            subtitle: "Šopska-Salat",               price: "4,50 €", allergens: "G" },
+    { name: "Dakovska salata",          subtitle: "Dakischer Salat",            price: "4,50 €" },
+    { name: "Paradajz salata",          subtitle: "Tomatensalat",               price: "4,50 €" },
+    { name: "Krastavac salata",         subtitle: "Gurkensalat",                price: "4,50 €" },
+    { name: "Kupus salata",             subtitle: "Krautsalat",                 price: "4,50 €" },
+    { name: "Kiseli kupus",             subtitle: "Sauerkraut",                 price: "4,50 €" },
+    { name: "Mešana salata",            subtitle: "Gemischter Salat",           price: "4,50 €" },
+    { name: "Krompir salata",           subtitle: "Kartoffelsalat",             price: "3,90 €" },
+    { name: "Kajmak",                   subtitle: "Käsmus",                     price: "1,90 €", allergens: "G" },
+    { name: "Ajvar",                                                              price: "1,90 €" },
+    { name: "Džadzike",                                                           price: "1,90 €", allergens: "G" },
+  ]},
+  { key: "kuhinja", label: "Kuhinja", emoji: "🍲", items: [
+    { name: "Pileća ili Rind Čorba",    subtitle: "Hühner- oder Rindssuppe",   price: "4,90 €", allergens: "A" },
+    { name: "Pasulj",                   subtitle: "Bohnensuppe",               price: "6,90 €", allergens: "A" },
+    { name: "Sarma 1 kom.",             subtitle: "Krautroulade",              price: "2,00 €", allergens: "A" },
+    { name: "Rindfleisch",                                                       price: "7,90 €", allergens: "A" },
+    { name: "Sarma sa prilogom",        subtitle: "Krautroulade mit Beilage",  price: "6,90 €", allergens: "G" },
+  ]},
+  { key: "riba", label: "Riba", emoji: "🐟", items: [
+    { name: "Pastrmka",                 subtitle: "Forelle",                   price: "13,90 €", allergens: "D" },
+    { name: "File Pangasius",           subtitle: "Fischfilet Pangasius",      price: "13,90 €", allergens: "D" },
+  ]},
+  { key: "prilog", label: "Prilog", emoji: "🥖", items: [
+    { name: "Lepinja",                  subtitle: "Fladenbrot",                price: "1,50 €", allergens: "A" },
+    { name: "Pomfrit",                  subtitle: "Pommes",                    price: "2,90 €" },
+    { name: "Ketchup",                                                           price: "1,00 €", allergens: "M" },
+    { name: "Majonez",                  subtitle: "Mayonnaise",                price: "1,00 €", allergens: "C,G,M" },
+    { name: "Senf",                                                              price: "1,00 €", allergens: "M" },
+  ]},
+  { key: "desert", label: "Desert", emoji: "🍮", items: [
+    { name: "Palačinke 2 kom.",         subtitle: "Palatschinken",             price: "4,50 €", allergens: "A,C,G" },
+    { name: "Baklava 2 kom.",                                                    price: "4,50 €", allergens: "A,H" },
+  ]},
 ];
 
-const BUFFET: Record<BuffetKey, string[]> = {
-  "Čorbe":       ["Pileća čorba", "Pasulj sa rebarcima"],
-  "Salate":      ["Kupus salata", "Kiseli kupus", "Paradajz salata", "Šopska salata"],
-  "Glavna jela": ["Punjene paprike", "Sarma", "Pečene kobasice", "Prženi krompir"],
-  "Jelo dana":   ["Menja se svaki dan: musaka, gulaš, rizoto, ćufte, špageti…"],
-};
+const NAV  = ["Početna", "Jelovnik", "O nama", "Kontakt"];
+const NMAP: Record<string, string> = { "Početna":"home","Jelovnik":"jelovnik","O nama":"o-nama","Kontakt":"kontakt" };
 
-const TESTIMONIALS: Testimonial[] = [
-  { name: "Dragan M.", text: "Ćevapi kao kod moje bake u Nišu. Ovde se oseća prava balkanska duša, i hrana i usluga su savršeni.", stars: 5 },
-  { name: "Ana P.",    text: "Karađorđeva šnicla je bila fenomenalna! Brzo, ukusno i po fer cenama. Svakako se vraćam.", stars: 5 },
-  { name: "Marko S.", text: "Buffet je neverovatna vrednost za novac. Porcije ogromne, hrana domaća. Preporuka za sve u Beču!", stars: 5 },
-];
-
-const GALLERY_ITEMS: { e: string; l: string; c: string }[] = [
-  { e: "🥩", l: "Svež roštilj",    c: "gtall" },
-  { e: "🍽️", l: "Serviranje",      c: "" },
-  { e: "🏠", l: "Naš enterijer",   c: "" },
-  { e: "🌶️", l: "Domaći kajmak",  c: "gwide" },
-  { e: "🍷", l: "Balkanska vina",  c: "" },
-  { e: "🥗", l: "Šopska salata",   c: "" },
-];
-
-const CONTACT_BLOCKS: [string, string, string][] = [
-  ["📍", "Adresa",  "Musterstraße 12\n1010 Wien, Austrija"],
-  ["📞", "Telefon", "+43 1 234 56 78"],
-  ["✉️", "Email",   "info@juzni-merak.at"],
-];
-
-const HOURS: [string, string][] = [
-  ["Pon – Čet", "11:00 – 22:00"],
-  ["Pet – Sub", "11:00 – 23:00"],
-  ["Nedela",    "12:00 – 21:00"],
-];
-
-const PILLARS: [string, string, string][] = [
-  ["🥩", "Svežina",          "Samo najsvežiji sastojci, svaki dan"],
-  ["🔥", "Tradicija",        "Originalni balkanski recepti"],
-  ["❤️", "Gostoprimljivost", "Svaki gost je naša porodica"],
-];
-
-const HERO_STATS: [string, string][] = [
-  ["18+",  "Godina tradicije"],
-  ["50+",  "Jela na meniju"],
-  ["4.7★", "Ocena gostiju"],
-];
-
-const GUESTS_COUNT: (number | string)[] = [1, 2, 3, 4, 5, 6, 7, "8+"];
-const OCCASIONS: string[] = ["Obična večera", "Rođendan", "Godišnjica", "Poslovni ručak", "Grupni događaj"];
-
-// ─── HOOKS ───────────────────────────────────────────────────────────────────
-function useInView(ref: React.RefObject<HTMLElement | null>, threshold = 0.1): boolean {
-  const [visible, setVisible] = useState<boolean>(false);
+function useInView(ref: React.RefObject<HTMLElement | null>, t = 0.08): boolean {
+  const [v, setV] = useState(false);
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold }
-    );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [ref, threshold]);
-  return visible;
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setV(true); }, { threshold: t });
+    if (ref.current) o.observe(ref.current);
+    return () => o.disconnect();
+  }, [ref, t]);
+  return v;
 }
 
-// ─── REVEAL COMPONENT ────────────────────────────────────────────────────────
-function Reveal({ children, delay = 0, from = "bottom", style = {} }: RevealProps) {
+function Reveal({ children, delay = 0, style = {} }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref);
-
-  const transforms: Record<string, string> = {
-    bottom: "translateY(35px)",
-    left:   "translateX(-30px)",
-    right:  "translateX(30px)",
-    none:   "none",
-  };
-
+  const v = useInView(ref);
   return (
-    <div
-      ref={ref}
-      style={{
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? "none" : transforms[from],
-        transition: `opacity .75s ease ${delay}ms, transform .75s ease ${delay}ms`,
-        ...style,
-      }}
-    >
+    <div ref={ref} style={{
+      opacity: v ? 1 : 0,
+      transform: v ? "translateY(0)" : "translateY(24px)",
+      transition: `opacity .6s cubic-bezier(.16,1,.3,1) ${delay}ms, transform .6s cubic-bezier(.16,1,.3,1) ${delay}ms`,
+      ...style,
+    }}>
       {children}
     </div>
   );
 }
 
-// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function JuzniMerak() {
-  const [menuOpen,  setMenuOpen]  = useState<boolean>(false);
-  const [scrolled,  setScrolled]  = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<BuffetKey>("Čorbe");
+  const [open, setOpen]         = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [cat, setCat]           = useState("Roštilj");
+  const [dbMenu, setDbMenu]     = useState<MenuCat[]>(MENU);
+  const [resForm, setResForm]   = useState({ firstName:"", lastName:"", phone:"", date:"", time:"19:00", guests:"2", occasion:"", note:"" });
+  const [resSent, setResSent]   = useState(false);
+  const [resSending, setResSending] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const fn = () => setScrolled(window.scrollY > 30);
+    window.addEventListener("scroll", fn);
+    // Fetch live menu from DB
+    fetch("/api/menu")
+      .then(r => r.json())
+      .then((items: {id:number;category:string;name:string;subtitle:string|null;price:string;allergens:string|null;available:boolean}[]) => {
+        if (!Array.isArray(items)) return;
+        const available = items.filter(i => i.available);
+        const catMap: Record<string, MenuCat> = {};
+        const CAT_META: Record<string,{key:string;emoji:string}> = {
+          "Roštilj":      { key:"Roštilj",      emoji:"🔥" },
+          "Specijaliteti":{ key:"Specijaliteti", emoji:"⭐" },
+          "Salate":       { key:"Salate",        emoji:"🥗" },
+          "Kuhinja":      { key:"Kuhinja",       emoji:"🍲" },
+          "Riba":         { key:"Riba",          emoji:"🐟" },
+          "Prilog":       { key:"Prilog",        emoji:"🥖" },
+          "Desert":       { key:"Desert",        emoji:"🍮" },
+        };
+        available.forEach(item => {
+          if (!catMap[item.category]) {
+            const meta = CAT_META[item.category] ?? { key: item.category, emoji: "🍴" };
+            catMap[item.category] = { key: meta.key, label: item.category, emoji: meta.emoji, items: [] };
+          }
+          catMap[item.category].items.push({ name: item.name, subtitle: item.subtitle ?? undefined, price: item.price, allergens: item.allergens ?? undefined });
+        });
+        const ordered = ["Roštilj","Specijaliteti","Salate","Kuhinja","Riba","Prilog","Desert"]
+          .filter(k => catMap[k])
+          .map(k => catMap[k]);
+        if (ordered.length > 0) { setDbMenu(ordered); setCat(ordered[0].key); }
+      })
+      .catch(() => {});
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const goto = (label: string): void => {
-    const id = NAV_MAP[label] ?? label;
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
+  const go = (label: string) => {
+    document.getElementById(NMAP[label] ?? label)?.scrollIntoView({ behavior: "smooth" });
+    setOpen(false);
   };
+
+  async function submitReservation(e: React.FormEvent) {
+    e.preventDefault();
+    setResSending(true);
+    await fetch("/api/reservations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...resForm, guests: Number(resForm.guests) }),
+    });
+    setResSending(false);
+    setResSent(true);
+  }
+
+  const active = dbMenu.find(c => c.key === cat) ?? dbMenu[0];
 
   return (
     <>
       <style>{CSS}</style>
 
-      {/* ── NAV ── */}
-      <header className={`nav ${scrolled ? "nav--solid" : ""}`}>
-        <div className="nav__logo" onClick={() => goto("Početna")}>
-          <span className="nav__flame">♨</span>
-          <div>
-            <div className="nav__name">Južni Merak</div>
-            <div className="nav__sub">Balkanski Roštilj · Beč</div>
-          </div>
-        </div>
+      {/* NAV */}
+      <header className={`nav ${scrolled ? "nav--up" : ""}`}>
+        <button className="nav__logo" onClick={() => go("Početna")}>
+          <span className="logo-sq">JM</span>
+          <span className="logo-txt">Južni Merak</span>
+        </button>
 
-        <nav className={`nav__links ${menuOpen ? "open" : ""}`}>
-          {NAV.map((n) => (
-            <a key={n} className="nav__link" onClick={() => goto(n)}>{n}</a>
+        <nav className={`nav__links ${open ? "is-open" : ""}`}>
+          {NAV.map(n => (
+            <button key={n} className="nav__a" onClick={() => go(n)}>{n}</button>
           ))}
-          <button className="btn btn--gold mob-reserve" onClick={() => goto("Kontakt")}>
-            Rezervacija
-          </button>
+          <button className="cta-btn mob-only" onClick={() => go("Kontakt")}>Rezerviši</button>
         </nav>
 
-        <div className="nav__right">
-          <button className="btn btn--gold desk-reserve" onClick={() => goto("Kontakt")}>
-            Rezervacija stola
-          </button>
-          <button className="burger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Meni">
-            <span style={{ transform: menuOpen ? "rotate(45deg) translate(5px,5px)" : "none" }} />
-            <span style={{ opacity: menuOpen ? 0 : 1 }} />
-            <span style={{ transform: menuOpen ? "rotate(-45deg) translate(5px,-5px)" : "none" }} />
+        <div className="nav__end">
+          <button className="cta-btn desk-only" onClick={() => go("Kontakt")}>Rezerviši sto</button>
+          <button className="burger" onClick={() => setOpen(!open)} aria-label="menu">
+            <span className={open ? "r45"  : ""} />
+            <span className={open ? "fade" : ""} />
+            <span className={open ? "r-45" : ""} />
           </button>
         </div>
       </header>
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <section id="home" className="hero">
-        <div className="hero__bg">
-          <div className="hero__glow" />
-          <div className="hero__grid" />
-        </div>
+        <div className="hero__inner wrap">
+          <div className="hero__left">
+            <Reveal>
+              <div className="tag-pill">
+                <span className="tag-dot" />
+                Wien 1100 · Friesenplatz 1-2
+              </div>
+            </Reveal>
 
-        <div className="hero__body">
-          <div className="hero__badge">🔥 Autentična balkanska kuhinja · Beč</div>
-          <h1 className="hero__h1">
-            Južni<em>Merak</em>
-          </h1>
-          <div className="hero__rule">
-            <span /><span className="hero__diamond">✦</span><span />
+            <Reveal delay={60}>
+              <h1 className="hero__h1">
+                Balkanski<br />
+                ukus<br />
+                <span className="acc-txt">u Beču.</span>
+              </h1>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <p className="hero__p">
+                Svježe, domaće, serviran s ljubavlju.<br />
+                Autentična balkanska kuhinja u Beču.
+              </p>
+            </Reveal>
+
+            <Reveal delay={180}>
+              <div className="hero__btns">
+                <button className="cta-btn cta-btn--lg" onClick={() => go("Jelovnik")}>Pogledaj jelovnik</button>
+                <button className="out-btn out-btn--lg" onClick={() => go("Kontakt")}>Rezerviši sto →</button>
+              </div>
+            </Reveal>
           </div>
-          <p className="hero__tagline">Gde balkanski ukus postaje umetnost</p>
-          <div className="hero__btns">
-            <button className="btn btn--gold btn--lg" onClick={() => goto("Jelovnik")}>
-              Pogledaj jelovnik
-            </button>
-            <button className="btn btn--outline btn--lg" onClick={() => goto("Kontakt")}>
-              Rezerviši sto
-            </button>
-          </div>
-        </div>
 
-        <div className="hero__scroll" onClick={() => goto("O nama")}>
-          <span>Skroluj</span>
-          <div className="hero__line" />
-        </div>
+          <Reveal delay={80} style={{ flex: "1" }}>
+            <div className="hero__card">
+              <div className="hcard__status">
+                <span className="hcard__dot" />
+                <span>Otvoreno danas</span>
+              </div>
 
-        <div className="hero__band">
-          {HERO_STATS.map(([n, l]) => (
-            <div key={l} className="hero__stat">
-              <strong>{n}</strong>
-              <span>{l}</span>
+              <div className="hcard__rows">
+                {([
+                  ["📍", "Adresa", "Friesenplatz 1-2\nWien 1100"],
+                  ["⏰", "Ručak", "Mo – Fr  11:00 – 16:00"],
+                  ["📞", "Telefon", "+43 68 1101 96066"],
+                ] as [string, string, string][]).map(([ic, k, v]) => (
+                  <div key={k} className="hcard__row">
+                    <span className="hcard__ic">{ic}</span>
+                    <div>
+                      <div className="hcard__k">{k}</div>
+                      <div className="hcard__v">{v}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button className="cta-btn" style={{ width: "100%", marginTop: "1.5rem" }} onClick={() => go("Kontakt")}>
+                Rezerviši sto
+              </button>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── O NAMA ── */}
-      <section id="o-nama" className="sec sec--light">
-        <div className="wrap">
-          <div className="about">
-            <Reveal from="left">
-              <div className="about__vis">
-                <div className="about__main">
-                  <span>🍖</span>
-                  <div className="about__main-label">Roštilj &amp; Tradicija</div>
-                </div>
-                <div className="about__accent">
-                  <span>🌶️</span>
-                  <div>Domaći recepti</div>
-                </div>
-                <div className="about__frame" />
-              </div>
-            </Reveal>
-
-            <Reveal from="right" delay={100}>
-              <div className="about__txt">
-                <p className="lbl">O nama</p>
-                <h2 className="sh">
-                  Balkanski duh<br /><em>u srcu Beča</em>
-                </h2>
-                <p className="ap">
-                  Dobrodošli u <strong>Južni Merak</strong> – restoran gde se oseća prava balkanska
-                  gostoprimljivost. Naša kuhinja donosi autentične ukuse Balkana sa svežim namirnicama,
-                  originalnim receptima i atmosferom koja podseća na dom.
-                </p>
-                <p className="ap">
-                  Svako jelo pripremamo sa ljubavlju i pažnjom, baš kao što su to radile naše bake.
-                  Meso začinjeno po originalnim receptima, svakodnevno sveže – to je naš zavet gostima.
-                </p>
-                <div className="pillars">
-                  {PILLARS.map(([ic, t, d]) => (
-                    <div key={t} className="pillar">
-                      <div className="pillar__ic">{ic}</div>
-                      <div>
-                        <div className="pillar__t">{t}</div>
-                        <div className="pillar__d">{d}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ── JELOVNIK ── */}
-      <section id="jelovnik" className="sec sec--dark">
-        <div className="wrap">
-          <Reveal style={{ textAlign: "center" }}>
-            <p className="lbl lbl--gold">Naš jelovnik</p>
-            <h2 className="sh sh--light">Specijaliteti <em>kuće</em></h2>
-            <p className="sub">Svako jelo radi se svaki dan sveže, po starim receptima Balkana.</p>
           </Reveal>
+        </div>
 
-          <div className="mgrid">
-            {SPECIALTIES.map((s, i) => (
-              <Reveal key={s.name} delay={i * 80}>
-                <div className="mcard">
-                  {s.tag && <div className="mcard__tag">{s.tag}</div>}
-                  <div className="mcard__emo">{s.emoji}</div>
-                  <div className="mcard__name">{s.name}</div>
-                  <div className="mcard__desc">{s.desc}</div>
-                  <div className="mcard__foot">
-                    <span className="mcard__price">{s.price}</span>
-                  </div>
-                </div>
-              </Reveal>
+        {/* Stats strip */}
+        <div className="stats-strip">
+          <div className="wrap stats-inner">
+            {[["50+", "Jela na meniju"], ["4.7★", "Ocena gostiju"], ["Wien", "1100, Friesenplatz"], ["Mo–Fr", "11:00 – 16:00"]].map(([n, l]) => (
+              <div key={l} className="stat">
+                <span className="stat__n">{n}</span>
+                <span className="stat__l">{l}</span>
+              </div>
             ))}
           </div>
-
-          <Reveal delay={200} style={{ textAlign: "center", marginTop: "3rem" }}>
-            <p className="menu-note">Kompletan jelovnik dolazi uskoro · Menjakarta će biti dodata</p>
-            <button className="btn btn--gold btn--lg" onClick={() => goto("Kontakt")}>
-              Rezerviši sto →
-            </button>
-          </Reveal>
         </div>
       </section>
 
-      {/* ── BUFFET ── */}
-      <section className="sec sec--fire">
+      {/* O NAMA — BENTO */}
+      <section id="o-nama" className="sec">
         <div className="wrap">
-          <div className="buff">
-            <Reveal from="left">
-              <div className="buff__info">
-                <p className="lbl lbl--gold">Svaki dan</p>
-                <h2 className="sh sh--light">Dnevni <em>Bife</em></h2>
-                <p className="buff__intro">
-                  Uživajte u našem dnevnom bifeju od <strong>11:00 do 18:00</strong> sa raznovrsnim
-                  jelima balkanske kuhinje, sve za jednu cenu.
+          <Reveal>
+            <div className="sec-eyebrow">O nama</div>
+            <h2 className="sec-h2">Balkanski duh<br /><span className="acc-txt">u srcu Beča</span></h2>
+          </Reveal>
+
+          <div className="bento">
+            <Reveal style={{ gridArea: "a" }}>
+              <div className="bc bc--lg bc--off">
+                <div className="bc__label">Naša priča</div>
+                <p className="bc__body">
+                  Dobrodošli u <strong>Južni Merak</strong> — restoran gde se oseća prava balkanska
+                  gostoprimljivost. Autentičan ukus Balkana u Beču, sa svežim
+                  namirnicama i receptima koji podsećaju na dom.
                 </p>
-                <div className="buff__prices">
-                  <div className="bpcard">
-                    <div className="bpcard__day">Pon – Pet</div>
-                    <div className="bpcard__amt">12,90 €</div>
-                    <div className="bpcard__note">po osobi</div>
-                  </div>
-                  <div className="bpcard bpcard--hi">
-                    <div className="bpcard__day">Sub, Ned &amp; Praznici</div>
-                    <div className="bpcard__amt">19,90 €</div>
-                    <div className="bpcard__note">po osobi</div>
-                  </div>
-                </div>
-                <button className="btn btn--gold" style={{ marginTop: "2rem" }} onClick={() => goto("Kontakt")}>
-                  Saznaj više →
+                <div className="bc__emojis">🍖 &nbsp; 🌶️ &nbsp; 🔥</div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={60} style={{ gridArea: "b" }}>
+              <div className="bc bc--accent">
+                <div className="bc__num">50<sup>+</sup></div>
+                <div className="bc__sub">Jela na meniju</div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={80} style={{ gridArea: "c" }}>
+              <div className="bc bc--off">
+                <div className="bc__icon">🥩</div>
+                <div className="bc__title">Svežina</div>
+                <div className="bc__desc">Samo najsvežiji sastojci, svaki dan</div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={100} style={{ gridArea: "d" }}>
+              <div className="bc bc--off">
+                <div className="bc__num bc__num--sm">50<sup>+</sup></div>
+                <div className="bc__sub">Jela na meniju</div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={110} style={{ gridArea: "e" }}>
+              <div className="bc bc--off">
+                <div className="bc__icon">❤️</div>
+                <div className="bc__title">Gostoprimljivost</div>
+                <div className="bc__desc">Svaki gost je naša porodica</div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={120} style={{ gridArea: "f" }}>
+              <div className="bc bc--off">
+                <div className="bc__label">Ručak</div>
+                <div className="bc__time">11:00 – 16:00</div>
+                <div className="bc__desc" style={{ marginTop: ".4rem" }}>Pon – Pet</div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* JELOVNIK */}
+      <section id="jelovnik" className="sec sec--off">
+        <div className="wrap">
+          <Reveal>
+            <div className="sec-eyebrow">Jelovnik</div>
+            <h2 className="sec-h2">Naša <span className="acc-txt">jela</span></h2>
+            <p className="sec-p">Sva jela se pripremaju svakodnevno sveže, po originalnim receptima.</p>
+          </Reveal>
+
+          <div className="tabs-scroll">
+            <div className="tabs">
+              {dbMenu.map(c => (
+                <button key={c.key} className={`tab ${cat === c.key ? "tab--on" : ""}`} onClick={() => setCat(c.key)}>
+                  {c.emoji} {c.label}
                 </button>
-              </div>
-            </Reveal>
-
-            <Reveal from="right" delay={100}>
-              <div className="btabs">
-                <div className="btabs__btns">
-                  {(Object.keys(BUFFET) as BuffetKey[]).map((k) => (
-                    <button
-                      key={k}
-                      className={`btab ${activeTab === k ? "btab--on" : ""}`}
-                      onClick={() => setActiveTab(k)}
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
-                <div className="btabs__body">
-                  {BUFFET[activeTab].map((item) => (
-                    <div key={item} className="bitem">
-                      <span>◆</span>{item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── GALERIJA ── */}
-      <section id="galerija" className="sec sec--light">
-        <div className="wrap">
-          <Reveal style={{ textAlign: "center" }}>
-            <p className="lbl">Galerija</p>
-            <h2 className="sh">Atmosfera &amp; <em>Ukusi</em></h2>
+          <Reveal key={cat}>
+            <div className="mlist">
+              {active.items.map((item, i) => (
+                <div key={i} className="mrow">
+                  <div className="mrow__l">
+                    <div className="mrow__name">{item.name}</div>
+                    {item.subtitle  && <div className="mrow__sub">{item.subtitle}</div>}
+                    {item.allergens && <div className="mrow__a">({item.allergens})</div>}
+                  </div>
+                  <div className="mrow__price">{item.price}</div>
+                </div>
+              ))}
+            </div>
           </Reveal>
-          <div className="gallery">
-            {GALLERY_ITEMS.map((g, i) => (
-              <Reveal key={g.l} delay={i * 60} style={{ display: "contents" }}>
-                <div className={`gitem ${g.c}`}>
-                  <span className="gitem__e">{g.e}</span>
-                  <div className="gitem__ov"><span>{g.l}</span></div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+
+          <p className="allergy-note" style={{ marginTop: "1rem" }}>
+            Alergeni su naznačeni u zagradama.
+          </p>
         </div>
       </section>
 
-      {/* ── UTISCI ── */}
-      <section className="sec sec--burg">
-        <div className="wrap">
-          <Reveal style={{ textAlign: "center" }}>
-            <p className="lbl lbl--gold">Reči naših gostiju</p>
-            <h2 className="sh sh--light">Šta kažu <em>gosti</em></h2>
+      {/* LUNCH BAND */}
+      <section className="lunch-sec">
+        <div className="wrap lunch-inner">
+          <Reveal style={{ flex: "1" }}>
+            <div className="sec-eyebrow sec-eyebrow--light">Mittagsmenü</div>
+            <h2 className="lunch-h">Svaki dan svježe<br />kuhana jela</h2>
+            <p className="lunch-p">Ponedeljak – Petak &nbsp;·&nbsp; 11:00 – 16:00</p>
           </Reveal>
-          <div className="revs">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 120}>
-                <div className="rcard">
-                  <div className="rcard__q">&ldquo;</div>
-                  <p className="rcard__txt">{t.text}</p>
-                  <div className="rcard__stars">{"★".repeat(t.stars)}</div>
-                  <div className="rcard__name">— {t.name}</div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <Reveal delay={80} style={{ flexShrink: 0 }}>
+            <a href="tel:+4368110196066" className="cta-btn cta-btn--lg cta-btn--white">
+              +43 68 1101 96066
+            </a>
+          </Reveal>
         </div>
       </section>
 
-      {/* ── KONTAKT ── */}
-      <section id="kontakt" className="sec sec--light">
+      {/* KONTAKT */}
+      <section id="kontakt" className="sec">
         <div className="wrap">
-          <Reveal style={{ textAlign: "center" }}>
-            <p className="lbl">Posetite nas</p>
-            <h2 className="sh">Rezervacija &amp; <em>Kontakt</em></h2>
+          <Reveal>
+            <div className="sec-eyebrow">Rezervacija</div>
+            <h2 className="sec-h2">Rezervišite <span className="acc-txt">vaš sto</span></h2>
           </Reveal>
 
           <div className="cgrid">
-            <Reveal from="left" delay={100}>
+            <Reveal delay={60}>
               <div className="cinfo">
-                {CONTACT_BLOCKS.map(([ic, l, v]) => (
-                  <div key={l} className="cblock">
-                    <div className="cicon">{ic}</div>
+                {([
+                  ["📍", "Adresa",          "Friesenplatz 1-2\nWien 1100, Austrija"],
+                  ["📞", "Telefon",         "+43 68 1101 96066"],
+                  ["⏰", "Ručak (Mo – Fr)", "11:00 – 16:00"],
+                ] as [string,string,string][]).map(([ic, lbl, val]) => (
+                  <div key={lbl} className="ccard">
+                    <span className="ccard__ic">{ic}</span>
                     <div>
-                      <div className="clbl">{l}</div>
-                      <div className="cval">{v}</div>
+                      <div className="ccard__lbl">{lbl}</div>
+                      <div className="ccard__val">{val}</div>
                     </div>
                   </div>
                 ))}
-
-                <div className="clbl" style={{ marginBottom: ".7rem" }}>Radno vreme</div>
-                <table className="htable">
-                  <tbody>
-                    {HOURS.map(([d, t]) => (
-                      <tr key={d}>
-                        <td>{d}</td>
-                        <td>{t}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div className="delivery">
-                  <span>🛵</span>
-                  <div>
-                    <strong>Dostava u celom Beču</strong>
-                    <div>Svakog dana od 11:00 – 19:00</div>
-                  </div>
-                </div>
               </div>
             </Reveal>
 
-            <Reveal from="right" delay={150}>
-              <div className="rform">
-                <h3 className="rform__title">Rezervišite Vaš sto</h3>
-                <div className="fr2">
-                  <div className="fg"><label>Ime</label><input type="text" placeholder="Vaše ime" /></div>
-                  <div className="fg"><label>Prezime</label><input type="text" placeholder="Vaše prezime" /></div>
+            <Reveal delay={100}>
+              {resSent ? (
+                <div className="rform" style={{ textAlign:"center", padding:"3rem 2rem" }}>
+                  <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>✅</div>
+                  <div style={{ fontSize:"1.2rem", fontWeight:800, color:"var(--ink)", marginBottom:".5rem" }}>Hvala na rezervaciji!</div>
+                  <div style={{ color:"var(--ink2)", fontSize:".9rem", marginBottom:"1.5rem" }}>Kontaktiraćemo vas uskoro za potvrdu.</div>
+                  <button className="cta-btn" onClick={() => setResSent(false)}>Nova rezervacija</button>
                 </div>
-                <div className="fr2">
-                  <div className="fg"><label>Email</label><input type="email" placeholder="vasa@email.at" /></div>
-                  <div className="fg"><label>Telefon</label><input type="tel" placeholder="+43 …" /></div>
-                </div>
-                <div className="fr2">
-                  <div className="fg"><label>Datum</label><input type="date" /></div>
-                  <div className="fg"><label>Vreme</label><input type="time" defaultValue="19:00" /></div>
-                </div>
-                <div className="fr2">
-                  <div className="fg">
-                    <label>Broj gostiju</label>
-                    <select>
-                      {GUESTS_COUNT.map((n) => (
-                        <option key={String(n)}>{n} {n === 1 ? "gost" : "gosta"}</option>
-                      ))}
-                    </select>
+              ) : (
+                <form className="rform" onSubmit={submitReservation}>
+                  <div className="fr2">
+                    <div className="fg"><label>Ime</label><input required type="text" placeholder="Vaše ime" value={resForm.firstName} onChange={e => setResForm(f => ({ ...f, firstName: e.target.value }))} /></div>
+                    <div className="fg"><label>Prezime</label><input required type="text" placeholder="Vaše prezime" value={resForm.lastName} onChange={e => setResForm(f => ({ ...f, lastName: e.target.value }))} /></div>
+                  </div>
+                  <div className="fr2">
+                    <div className="fg"><label>Telefon</label><input required type="tel" placeholder="+43 …" value={resForm.phone} onChange={e => setResForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                    <div className="fg"><label>Datum</label><input required type="date" value={resForm.date} onChange={e => setResForm(f => ({ ...f, date: e.target.value }))} /></div>
+                  </div>
+                  <div className="fr2">
+                    <div className="fg"><label>Vreme</label><input required type="time" value={resForm.time} onChange={e => setResForm(f => ({ ...f, time: e.target.value }))} /></div>
+                    <div className="fg">
+                      <label>Broj gostiju</label>
+                      <select value={resForm.guests} onChange={e => setResForm(f => ({ ...f, guests: e.target.value }))}>
+                        {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} {n===1?"gost":"gosta"}</option>)}
+                      </select>
+                    </div>
                   </div>
                   <div className="fg">
-                    <label>Povod</label>
-                    <select>
-                      {OCCASIONS.map((o) => (
-                        <option key={o}>{o}</option>
-                      ))}
-                    </select>
+                    <label>Povod (opciono)</label>
+                    <input type="text" placeholder="Rođendan, godišnjica…" value={resForm.occasion} onChange={e => setResForm(f => ({ ...f, occasion: e.target.value }))} />
                   </div>
-                </div>
-                <div className="fg">
-                  <label>Posebne napomene</label>
-                  <textarea placeholder="Alergije, posebne želje, slavlje…" rows={3} />
-                </div>
-                <button className="btn btn--gold btn--lg" style={{ width: "100%", marginTop: ".5rem" }}>
-                  ✓ Potvrdi rezervaciju
-                </button>
-                <p className="fnote">
-                  Ili nas pozovite: <strong>+43 1 234 56 78</strong> · Prihvatamo od 3+ osoba
-                </p>
-              </div>
+                  <div className="fg">
+                    <label>Napomena</label>
+                    <textarea placeholder="Alergije, posebne želje…" rows={3} value={resForm.note} onChange={e => setResForm(f => ({ ...f, note: e.target.value }))} />
+                  </div>
+                  <button type="submit" disabled={resSending} className="cta-btn cta-btn--lg" style={{ width: "100%", marginTop: ".5rem" }}>
+                    {resSending ? "Slanje…" : "Potvrdi rezervaciju"}
+                  </button>
+                </form>
+              )}
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* FOOTER */}
       <footer className="foot">
-        <div className="wrap">
-          <div className="fgrid">
+        <div className="wrap foot__row">
+          <div className="foot__brand">
+            <span className="logo-sq logo-sq--sm">JM</span>
             <div>
-              <div className="flogo"><span>♨</span> Južni Merak</div>
-              <div className="ftagline">Gde balkanski ukus postaje umetnost</div>
-              <hr className="fdiv" />
-              <p className="fdesc">Autentična balkanska kuhinja sa srcem – više od 18 godina u Beču.</p>
-              <div className="fsocial">
-                {["📘", "📸", "🐦"].map((ic) => (
-                  <a key={ic} href="#" className="fsoc">{ic}</a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="fh">Navigacija</div>
-              <ul className="fnav">
-                {NAV.map((n) => (
-                  <li key={n} onClick={() => goto(n)}>{n}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="fh">Kontakt</div>
-              <ul className="fnav">
-                <li>📍 Musterstraße 12, Wien</li>
-                <li>📞 +43 1 234 56 78</li>
-                <li>✉️ info@juzni-merak.at</li>
-              </ul>
-              <div className="fh" style={{ marginTop: "1.5rem" }}>Radno vreme</div>
-              <ul className="fnav">
-                <li>Pon–Čet: 11–22h</li>
-                <li>Pet–Sub: 11–23h</li>
-                <li>Ned: 12–21h</li>
-              </ul>
+              <div className="foot__name">Južni Merak</div>
+              <div className="foot__loc">Friesenplatz 1-2 · Wien 1100</div>
             </div>
           </div>
-          <div className="fbot">
-            <span>© {new Date().getFullYear()} Južni Merak · Sva prava zadržana</span>
-            <span>Privatnost · Impressum</span>
-          </div>
+          <nav className="foot__nav">
+            {NAV.map(n => <button key={n} className="foot__a" onClick={() => go(n)}>{n}</button>)}
+          </nav>
+          <div className="foot__copy">© {new Date().getFullYear()} Južni Merak</div>
         </div>
       </footer>
+
+      {/* MOBILE BAR */}
+      <div className="mob-bar">
+        <a href="tel:+4368110196066" className="mob-bar__call">
+          <span>📞</span>
+          <div>
+            <div className="mob-bar__lbl">Pozovite nas</div>
+            <div className="mob-bar__num">+43 68 1101 96066</div>
+          </div>
+        </a>
+        <button className="cta-btn" style={{ flexShrink:0, borderRadius:"12px", padding:".85rem 1.3rem", fontSize:".72rem" }} onClick={() => go("Kontakt")}>
+          Rezerviši
+        </button>
+      </div>
     </>
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Raleway:wght@300;400;500;600;700&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --dk:#130B05; --dk2:#1E1008; --burg:#5C1520; --terra:#B8572A;
-  --gold:#C9973A; --goldl:#E0B860; --cr:#F5ECD7; --cr2:#EDD9B0;
-  --tx:#3A2010; --txs:#7A5C3A;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:   #FFFFFF;
+  --off:     #F5F2ED;
+  --ink:     #18181B;
+  --ink2:    #52525B;
+  --ink3:    #A1A1AA;
+  --acc:     #E8602C;
+  --acc-h:   #CF4E1E;
+  --acc-soft:#FFF0EA;
+  --border:  #E4E0D9;
+  --border2: #CCC7BE;
 }
-html{scroll-behavior:smooth;}
-body{font-family:'Raleway',sans-serif;background:var(--cr);color:var(--tx);overflow-x:hidden;}
-body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
-  opacity:.5;mix-blend-mode:overlay;}
 
-.nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 3rem;height:80px;transition:background .4s,box-shadow .4s;}
-.nav--solid{background:rgba(19,11,5,.97);backdrop-filter:blur(16px);box-shadow:0 2px 40px rgba(0,0,0,.4);}
-.nav__logo{display:flex;align-items:center;gap:.9rem;cursor:pointer;}
-.nav__flame{font-size:1.8rem;color:var(--gold);}
-.nav__name{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--gold);line-height:1;}
-.nav__sub{font-size:.6rem;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:rgba(245,236,215,.4);}
-.nav__links{display:flex;align-items:center;gap:2.5rem;}
-.nav__link{font-size:.72rem;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:rgba(245,236,215,.75);text-decoration:none;cursor:pointer;position:relative;padding-bottom:3px;transition:color .3s;}
-.nav__link::after{content:'';position:absolute;bottom:0;left:0;height:1px;width:0;background:var(--gold);transition:width .3s;}
-.nav__link:hover{color:var(--gold);}.nav__link:hover::after{width:100%;}
-.nav__right{display:flex;align-items:center;gap:1rem;}
-.mob-reserve{display:none;}
-.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
-.burger span{display:block;width:24px;height:2px;background:var(--cr);transition:.3s;transform-origin:center;}
-
-.btn{padding:.8rem 2rem;font-family:'Raleway',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;border:none;cursor:pointer;transition:all .25s;}
-.btn--gold{background:var(--gold);color:var(--dk);}
-.btn--gold:hover{background:var(--goldl);transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,151,58,.35);}
-.btn--outline{background:transparent;color:var(--cr);border:1px solid rgba(245,236,215,.35);}
-.btn--outline:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
-.btn--lg{padding:1rem 2.8rem;font-size:.8rem;}
-
-.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(160deg,#0D0600 0%,#1E0A05 40%,#3D0E14 80%,#1A0508 100%);}
-.hero__bg{position:absolute;inset:0;}
-.hero__glow{position:absolute;bottom:-20%;left:50%;transform:translateX(-50%);width:120vw;height:80vh;border-radius:50%;background:radial-gradient(ellipse at 50% 100%,rgba(180,70,20,.35) 0%,rgba(100,20,10,.2) 40%,transparent 70%);animation:gp 4s ease-in-out infinite;}
-@keyframes gp{0%,100%{opacity:.7;transform:translateX(-50%) scale(1);}50%{opacity:1;transform:translateX(-50%) scale(1.05);}}
-.hero__grid{position:absolute;inset:0;background-image:linear-gradient(rgba(201,151,58,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(201,151,58,.03) 1px,transparent 1px);background-size:60px 60px;}
-.hero__body{position:relative;z-index:2;text-align:center;padding:0 2rem;padding-bottom:100px;}
-.hero__badge{display:inline-block;padding:.5rem 1.5rem;border:1px solid rgba(201,151,58,.3);background:rgba(201,151,58,.08);font-size:.68rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);border-radius:99px;margin-bottom:2rem;animation:fu 1s ease .2s both;}
-.hero__h1{font-family:'Playfair Display',serif;font-size:clamp(4rem,12vw,9rem);font-weight:900;line-height:.9;color:var(--cr);animation:fu 1s ease .4s both;}
-.hero__h1 em{font-style:italic;color:var(--gold);display:block;}
-.hero__rule{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin:1.5rem 0;animation:fu 1s ease .55s both;}
-.hero__rule span{height:1px;width:100px;background:linear-gradient(to right,transparent,rgba(201,151,58,.5));}
-.hero__rule span:last-child{background:linear-gradient(to left,transparent,rgba(201,151,58,.5));}
-.hero__diamond{color:var(--gold);font-size:.8rem;}
-.hero__tagline{font-family:'Cormorant Garamond',serif;font-size:clamp(1.1rem,2.5vw,1.6rem);font-style:italic;color:rgba(245,236,215,.6);animation:fu 1s ease .65s both;}
-.hero__btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2.5rem;animation:fu 1s ease .8s both;}
-.hero__scroll{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:rgba(245,236,215,.35);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;cursor:pointer;animation:fu 1s ease 1.1s both;}
-.hero__line{width:1px;height:50px;background:linear-gradient(to bottom,transparent,rgba(201,151,58,.5));animation:sa 2s ease-in-out infinite;}
-@keyframes sa{0%,100%{opacity:.3;transform:scaleY(.6);}50%{opacity:1;transform:scaleY(1);}}
-.hero__band{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(10px);border-top:1px solid rgba(201,151,58,.15);animation:fu 1s ease 1s both;}
-.hero__stat{flex:1;max-width:200px;padding:1.5rem 2rem;text-align:center;border-right:1px solid rgba(201,151,58,.12);}
-.hero__stat:last-child{border-right:none;}
-.hero__stat strong{display:block;font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gold);}
-.hero__stat span{font-size:.65rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,236,215,.4);margin-top:.2rem;display:block;}
-@keyframes fu{from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:none;}}
-
-.sec{padding:7rem 2rem;}
-.sec--light{background:var(--cr);}
-.sec--dark{background:var(--dk2);}
-.sec--burg{background:var(--burg);}
-.sec--fire{background:linear-gradient(135deg,#1A0B05,#350D0D);}
-.wrap{max-width:1200px;margin:0 auto;}
-.lbl{font-size:.68rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--terra);margin-bottom:.8rem;}
-.lbl--gold{color:var(--gold);}
-.sh{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;line-height:1.1;color:var(--dk);}
-.sh em{font-style:italic;color:var(--burg);}
-.sh--light{color:var(--cr);}
-.sh--light em{color:var(--gold);}
-.sub{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:rgba(245,236,215,.6);margin-top:.8rem;}
-
-.about{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;margin-top:4rem;}
-.about__vis{position:relative;height:480px;}
-.about__main{position:absolute;inset:0 60px 60px 0;background:linear-gradient(135deg,var(--burg),var(--dk));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;}
-.about__main span{font-size:4rem;}
-.about__main-label{font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:.4rem 1.2rem;border:1px solid rgba(201,151,58,.3);background:rgba(201,151,58,.08);border-radius:99px;}
-.about__accent{position:absolute;width:155px;height:155px;bottom:-25px;right:0;background:var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;font-size:.68rem;font-weight:700;color:var(--dk);text-transform:uppercase;letter-spacing:1px;}
-.about__accent span{font-size:2.4rem;}
-.about__frame{position:absolute;top:20px;left:20px;right:80px;bottom:80px;border:1px solid rgba(201,151,58,.2);pointer-events:none;}
-.about__txt{padding-left:1rem;}
-.ap{font-family:'Cormorant Garamond',serif;font-size:1.15rem;line-height:1.9;color:var(--txs);margin-top:1.2rem;}
-.pillars{margin-top:2.5rem;display:flex;flex-direction:column;gap:1.2rem;}
-.pillar{display:flex;gap:1rem;align-items:flex-start;padding:1rem;background:rgba(93,21,32,.04);border-left:2px solid var(--gold);}
-.pillar__ic{font-size:1.4rem;flex-shrink:0;}
-.pillar__t{font-weight:700;font-size:.85rem;letter-spacing:.5px;color:var(--dk);margin-bottom:.2rem;}
-.pillar__d{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--txs);}
-
-.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;margin-top:4rem;background:rgba(201,151,58,.1);border:1px solid rgba(201,151,58,.1);}
-.mcard{background:var(--dk2);padding:2.2rem;display:flex;flex-direction:column;gap:.8rem;position:relative;transition:background .35s;}
-.mcard:hover{background:#281208;}
-.mcard__tag{position:absolute;top:1rem;right:1rem;padding:.3rem .9rem;background:var(--gold);color:var(--dk);font-size:.6rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:99px;}
-.mcard__emo{font-size:2.5rem;}
-.mcard__name{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--cr);}
-.mcard__desc{font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.7;color:rgba(245,236,215,.5);flex:1;}
-.mcard__foot{border-top:1px solid rgba(201,151,58,.12);padding-top:.8rem;margin-top:.5rem;}
-.mcard__price{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--gold);}
-.menu-note{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(245,236,215,.35);font-size:1rem;margin-bottom:1.5rem;}
-
-.buff{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:start;}
-.buff__intro{font-family:'Cormorant Garamond',serif;font-size:1.15rem;line-height:1.8;color:rgba(245,236,215,.65);margin-top:1rem;}
-.buff__intro strong{color:var(--gold);}
-.buff__prices{display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap;}
-.bpcard{flex:1;min-width:140px;padding:1.5rem;border:1px solid rgba(201,151,58,.2);text-align:center;}
-.bpcard--hi{border-color:var(--gold);background:rgba(201,151,58,.05);}
-.bpcard__day{font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(245,236,215,.5);margin-bottom:.5rem;}
-.bpcard__amt{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:var(--gold);}
-.bpcard__note{font-size:.7rem;color:rgba(245,236,215,.35);margin-top:.2rem;}
-.btabs{background:rgba(0,0,0,.3);border:1px solid rgba(201,151,58,.15);}
-.btabs__btns{display:flex;flex-wrap:wrap;border-bottom:1px solid rgba(201,151,58,.15);}
-.btab{flex:1;min-width:80px;padding:.9rem .4rem;background:none;border:none;border-right:1px solid rgba(201,151,58,.1);font-family:'Raleway',sans-serif;font-size:.63rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,236,215,.4);cursor:pointer;transition:all .2s;}
-.btab:last-child{border-right:none;}
-.btab--on{color:var(--gold);background:rgba(201,151,58,.08);}
-.btabs__body{padding:2rem;}
-.bitem{display:flex;gap:.8rem;align-items:center;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:rgba(245,236,215,.75);padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);}
-.bitem span{color:var(--gold);font-size:.6rem;}
-
-.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4rem;}
-.gitem{background:linear-gradient(135deg,var(--burg),var(--dk));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;transition:transform .35s;aspect-ratio:4/3;}
-.gitem:hover{transform:scale(1.03);z-index:2;}
-.gitem:hover .gitem__ov{opacity:1;}
-.gtall{grid-row:span 2;aspect-ratio:auto;}
-.gwide{grid-column:span 2;}
-.gitem__e{font-size:3.5rem;position:relative;z-index:1;}
-.gitem__ov{position:absolute;inset:0;background:rgba(92,21,32,.8);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;font-family:'Playfair Display',serif;font-style:italic;color:var(--cr);font-size:1.1rem;}
-
-.revs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:4rem;}
-.rcard{padding:2.5rem;border:1px solid rgba(201,151,58,.2);position:relative;background:rgba(0,0,0,.15);}
-.rcard__q{position:absolute;top:-5px;left:1.5rem;font-family:'Playfair Display',serif;font-size:6rem;color:rgba(201,151,58,.1);line-height:1;}
-.rcard__txt{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;line-height:1.8;color:rgba(245,236,215,.8);margin-bottom:1.2rem;}
-.rcard__stars{color:var(--gold);letter-spacing:3px;font-size:.9rem;}
-.rcard__name{font-family:'Raleway',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:.7rem;}
-
-.cgrid{display:grid;grid-template-columns:1fr 1.3fr;gap:5rem;margin-top:4rem;align-items:start;}
-.cblock{display:flex;gap:1.2rem;align-items:flex-start;margin-bottom:2rem;}
-.cicon{width:48px;height:48px;flex-shrink:0;background:var(--burg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
-.clbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--terra);margin-bottom:.3rem;}
-.cval{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--tx);line-height:1.6;white-space:pre-line;}
-.htable{width:100%;border-collapse:collapse;margin-bottom:1.5rem;}
-.htable tr{border-bottom:1px solid rgba(196,98,45,.1);}
-.htable td{padding:.5rem 0;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--tx);}
-.htable td:last-child{text-align:right;color:var(--txs);}
-.delivery{display:flex;gap:1rem;align-items:center;padding:1.2rem;background:rgba(93,21,32,.06);border-left:3px solid var(--gold);}
-.delivery span{font-size:1.5rem;}
-.delivery strong{font-size:.85rem;color:var(--dk);display:block;}
-.delivery div > div{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--txs);}
-.rform{background:white;padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,.08);}
-.rform__title{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--dk);margin-bottom:1.5rem;}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.fg{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;}
-.fg label{font-size:.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txs);}
-.fg input,.fg textarea,.fg select{padding:.8rem 1rem;border:1px solid rgba(196,98,45,.2);background:#fafaf8;font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--tx);outline:none;transition:border-color .2s;width:100%;}
-.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--burg);}
-.fg textarea{resize:vertical;}
-.fnote{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--txs);text-align:center;margin-top:1rem;font-style:italic;}
-
-.foot{background:var(--dk);padding:5rem 2rem 2rem;border-top:1px solid rgba(201,151,58,.1);}
-.fgrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:4rem;}
-.flogo{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gold);display:flex;align-items:center;gap:.5rem;}
-.ftagline{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(245,236,215,.35);margin-top:.5rem;}
-.fdiv{border:none;border-top:1px solid rgba(201,151,58,.15);margin:1.2rem 0;}
-.fdesc{font-family:'Cormorant Garamond',serif;color:rgba(245,236,215,.35);font-size:.95rem;line-height:1.7;}
-.fsocial{display:flex;gap:.8rem;margin-top:1.5rem;}
-.fsoc{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(201,151,58,.25);font-size:1rem;text-decoration:none;transition:all .2s;color:rgba(245,236,215,.5);}
-.fsoc:hover{border-color:var(--gold);color:var(--gold);}
-.fh{font-size:.65rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem;}
-.fnav{list-style:none;display:flex;flex-direction:column;gap:.8rem;}
-.fnav li{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:rgba(245,236,215,.45);cursor:pointer;transition:color .2s;}
-.fnav li:hover{color:var(--gold);}
-.fbot{margin-top:3rem;padding-top:1.5rem;border-top:1px solid rgba(201,151,58,.08);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
-.fbot span{font-size:.65rem;color:rgba(245,236,215,.2);letter-spacing:1px;}
-
-@media(max-width:900px){
-  .nav{padding:0 1.5rem;}
-  .nav__links{display:none;}
-  .nav__links.open{display:flex;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;top:80px;background:rgba(13,6,0,.98);gap:2.5rem;z-index:999;}
-  .nav__link{font-size:1.1rem;}
-  .mob-reserve{display:block;}
-  .burger{display:flex;}
-  .desk-reserve{display:none;}
-  .about,.buff,.cgrid{grid-template-columns:1fr;gap:3rem;}
-  .about__vis{height:280px;}
-  .about__accent{width:120px;height:120px;}
-  .mgrid{grid-template-columns:1fr;}
-  .gallery{grid-template-columns:1fr 1fr;}
-  .gtall,.gwide{grid-column:span 1;grid-row:span 1;aspect-ratio:4/3;}
-  .fgrid{grid-template-columns:1fr;gap:2.5rem;}
-  .hero__band{display:none;}
-  .fr2{grid-template-columns:1fr;}
-  .fbot{flex-direction:column;text-align:center;}
-  .hero__body{padding-bottom:2rem;}
-  .hero__scroll{bottom:2rem;}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--white);
+  color: var(--ink);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
-@media(max-width:480px){
-  .hero__h1{font-size:3.5rem;}
-  .hero__btns{flex-direction:column;align-items:center;}
-  .buff__prices{flex-direction:column;}
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 2rem; }
+
+.acc-txt { color: var(--acc); }
+
+
+/* ── BUTTONS ── */
+.cta-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: .7rem 1.6rem;
+  background: var(--acc); color: #fff;
+  border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: .75rem; font-weight: 700;
+  letter-spacing: .3px; border-radius: 10px;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  text-decoration: none; white-space: nowrap;
+}
+.cta-btn:hover  { background: var(--acc-h); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,96,44,.2); }
+.cta-btn:active { transform: scale(.98); }
+.cta-btn--lg    { padding: .9rem 2rem; font-size: .82rem; }
+.cta-btn--white { background: var(--acc); color: #fff; }
+.cta-btn--white:hover { background: var(--acc-h); box-shadow: 0 6px 20px rgba(232,96,44,.25); }
+
+.out-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: .7rem 1.6rem;
+  background: transparent; color: var(--ink2);
+  border: 1.5px solid var(--border2); cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: .75rem; font-weight: 600;
+  letter-spacing: .3px; border-radius: 10px;
+  transition: border-color .2s, color .2s, transform .15s;
+}
+.out-btn:hover  { border-color: var(--ink2); color: var(--ink); transform: translateY(-1px); }
+.out-btn--lg    { padding: .9rem 2rem; font-size: .82rem; }
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+  height: 66px; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 2rem;
+  transition: background .3s, box-shadow .3s;
+}
+.nav--up {
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(16px) saturate(200%);
+  -webkit-backdrop-filter: blur(16px) saturate(200%);
+  box-shadow: 0 1px 0 var(--border);
+}
+.nav__logo {
+  display: flex; align-items: center; gap: .7rem;
+  background: none; border: none; cursor: pointer;
+}
+.logo-sq {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--acc); color: #fff;
+  font-size: .8rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: .3px; flex-shrink: 0;
+}
+.logo-sq--sm { width: 30px; height: 30px; font-size: .7rem; border-radius: 6px; }
+.logo-txt {
+  font-size: .97rem; font-weight: 800;
+  color: var(--ink); letter-spacing: -.3px;
+}
+.nav__links { display: flex; align-items: center; gap: 1.75rem; }
+.nav__a {
+  background: none; border: none; cursor: pointer;
+  font-size: .78rem; font-weight: 500; color: var(--ink2);
+  transition: color .2s;
+}
+.nav__a:hover { color: var(--ink); }
+.nav__end { display: flex; align-items: center; gap: 1rem; }
+.mob-only { display: none; }
+.burger {
+  display: none; flex-direction: column; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 5px;
+}
+.burger span {
+  display: block; width: 22px; height: 2px;
+  background: var(--ink); border-radius: 2px;
+  transition: .25s cubic-bezier(.16,1,.3,1); transform-origin: center;
+}
+.burger .r45  { transform: rotate(45deg) translate(5px,5px); }
+.burger .fade { opacity: 0; }
+.burger .r-45 { transform: rotate(-45deg) translate(5px,-5px); }
+
+/* ── HERO ── */
+.hero {
+  padding-top: 66px;
+  background: var(--white);
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+}
+.hero__inner {
+  flex: 1;
+  display: grid; grid-template-columns: 1fr 380px;
+  gap: 5rem; align-items: center;
+  padding-top: 5rem; padding-bottom: 5rem;
+}
+.hero__left {}
+.tag-pill {
+  display: inline-flex; align-items: center; gap: .55rem;
+  padding: .4rem .9rem;
+  background: var(--acc-soft); border: 1.5px solid rgba(232,96,44,.2);
+  border-radius: 999px;
+  font-size: .68rem; font-weight: 600; color: var(--acc);
+  margin-bottom: 2rem;
+}
+.tag-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 6px #22C55E;
+  flex-shrink: 0;
+}
+.hero__h1 {
+  font-size: clamp(3rem, 6.5vw, 6rem);
+  font-weight: 900; letter-spacing: -3px;
+  line-height: .96; color: var(--ink);
+  margin-bottom: 1.75rem;
+}
+.hero__p {
+  font-size: 1.05rem; font-weight: 400; line-height: 1.7;
+  color: var(--ink3); margin-bottom: 2.5rem;
+  max-width: 420px;
+}
+.hero__btns { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+/* Hero info card */
+.hero__card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 1.75rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+}
+.hcard__status {
+  display: flex; align-items: center; gap: .55rem;
+  margin-bottom: 1.25rem;
+}
+.hcard__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22C55E; box-shadow: 0 0 8px #22C55E;
+  flex-shrink: 0;
+}
+.hcard__status span:last-child {
+  font-size: .72rem; font-weight: 600; color: var(--ink2);
+}
+.hcard__rows { border-top: 1px solid var(--border); }
+.hcard__row {
+  display: flex; align-items: flex-start; gap: .9rem;
+  padding: 1rem 0; border-bottom: 1px solid var(--border);
+}
+.hcard__row:last-of-type { border-bottom: none; }
+.hcard__ic { font-size: 1.1rem; }
+.hcard__k {
+  font-size: .6rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: .2rem;
+}
+.hcard__v {
+  font-size: .88rem; font-weight: 500; color: var(--ink);
+  line-height: 1.45; white-space: pre-line;
+}
+
+/* Stats strip */
+.stats-strip {
+  border-top: 1.5px solid var(--border);
+  background: var(--white);
+}
+.stats-inner {
+  display: flex; padding: 2rem 0;
+  gap: 0;
+}
+.stat {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: .3rem;
+  padding: 0 1rem;
+}
+.stat + .stat { border-left: 1px solid var(--border); }
+.stat__n {
+  font-size: 1.6rem; font-weight: 900; letter-spacing: -1px;
+  color: var(--acc);
+}
+.stat__l {
+  font-size: .68rem; font-weight: 500; color: var(--ink3);
+  letter-spacing: .3px;
+}
+
+/* ── SECTIONS ── */
+.sec     { padding: 7rem 0; background: var(--white); }
+.sec--off { background: var(--off); }
+
+.sec-eyebrow {
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--acc); margin-bottom: .9rem;
+  display: block;
+}
+.sec-eyebrow--light { color: var(--acc); }
+.sec-h2 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900; letter-spacing: -2px;
+  line-height: 1.08; color: var(--ink);
+  margin-bottom: 1rem;
+}
+.sec-p {
+  font-size: .97rem; color: var(--ink3); line-height: 1.7;
+  max-width: 500px; margin-bottom: 2.5rem;
+}
+
+/* ── BENTO ── */
+.bento {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-areas:
+    "a b c"
+    "a d e"
+    "a f f";
+  gap: .85rem;
+  margin-top: 3rem;
+}
+.bc {
+  border-radius: 16px; padding: 1.75rem;
+  border: 1.5px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: box-shadow .2s, border-color .2s;
+}
+.bc:hover { box-shadow: 0 8px 28px rgba(0,0,0,.08); border-color: var(--border2); }
+.bc--off  { background: var(--off); }
+.bc--accent  { background: var(--acc); border-color: var(--acc); }
+.bc--accent:hover { box-shadow: 0 8px 28px rgba(232,96,44,.25); }
+.bc--lg   { min-height: 320px; }
+
+.bc__label { font-size: .6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 1rem; }
+.bc--accent .bc__label { color: rgba(255,255,255,.65); }
+.bc__body  { font-size: .9rem; font-weight: 400; color: var(--ink2); line-height: 1.75; flex: 1; }
+.bc__emojis { font-size: 1.4rem; margin-top: 1.5rem; letter-spacing: 4px; }
+.bc__num   { font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; color: var(--ink); line-height: 1; }
+.bc--accent .bc__num { color: #fff; }
+.bc__num sup { font-size: 1.8rem; }
+.bc__num--sm { font-size: 2.5rem; }
+.bc__sub   { font-size: .78rem; font-weight: 600; color: var(--ink3); margin-top: .4rem; }
+.bc--accent .bc__sub { color: rgba(255,255,255,.75); }
+.bc__icon  { font-size: 1.7rem; margin-bottom: .75rem; }
+.bc__title { font-size: .93rem; font-weight: 700; color: var(--ink); margin-bottom: .35rem; }
+.bc__desc  { font-size: .8rem; font-weight: 400; color: var(--ink3); line-height: 1.55; }
+.bc__time  { font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; color: var(--ink); margin-top: .4rem; }
+
+/* ── MENU ── */
+.tabs-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; margin: 2rem -2rem 0; padding: 0 2rem;
+}
+.tabs-scroll::-webkit-scrollbar { display: none; }
+.tabs { display: flex; gap: .5rem; width: max-content; padding-bottom: .5rem; }
+.tab {
+  padding: .55rem 1.1rem;
+  background: var(--white); border: 1.5px solid var(--border);
+  color: var(--ink2); border-radius: 8px; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: .74rem; font-weight: 600;
+  transition: all .18s; white-space: nowrap;
+}
+.tab:hover { border-color: var(--border2); color: var(--ink); }
+.tab--on   { background: var(--acc) !important; border-color: var(--acc) !important; color: #fff !important; }
+
+.mlist {
+  margin-top: 1.5rem;
+  border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden;
+  background: var(--white);
+}
+.mrow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+  gap: 1rem; transition: background .12s;
+}
+.mrow:last-child { border-bottom: none; }
+.mrow:hover { background: var(--off); }
+.mrow__l   { flex: 1; min-width: 0; }
+.mrow__name { font-size: .9rem; font-weight: 600; color: var(--ink); }
+.mrow__sub  { font-size: .73rem; font-weight: 400; color: var(--ink3); margin-top: .15rem; }
+.mrow__a    { font-size: .62rem; font-weight: 500; color: var(--ink3); margin-top: .2rem; }
+.mrow__price { font-size: .9rem; font-weight: 700; color: var(--acc); white-space: nowrap; flex-shrink: 0; }
+
+.allergy-note { font-size: .7rem; color: var(--ink3); }
+
+/* ── LUNCH ── */
+.lunch-sec {
+  background: var(--off); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); padding: 5rem 0;
+}
+.lunch-inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 3rem; flex-wrap: wrap;
+}
+.lunch-h {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900; letter-spacing: -1.5px;
+  color: var(--ink); line-height: 1.1; margin-bottom: .6rem;
+}
+.lunch-p {
+  font-size: .82rem; font-weight: 500;
+  color: var(--ink3); letter-spacing: .5px;
+}
+
+/* ── CONTACT ── */
+.cgrid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; align-items: start; margin-top: 3rem; }
+.cinfo { display: flex; flex-direction: column; gap: .85rem; }
+.ccard {
+  display: flex; align-items: flex-start; gap: .9rem;
+  background: var(--off); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 1.1rem;
+  transition: border-color .2s;
+}
+.ccard:hover { border-color: var(--border2); }
+.ccard__ic  { font-size: 1.3rem; }
+.ccard__lbl { font-size: .6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: .25rem; }
+.ccard__val { font-size: .88rem; font-weight: 500; color: var(--ink); line-height: 1.5; white-space: pre-line; }
+
+.rform {
+  background: var(--off); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 2rem;
+}
+.fr2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+.fg  { display: flex; flex-direction: column; gap: .4rem; }
+.fg label { font-size: .63rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); }
+.fg input, .fg select, .fg textarea {
+  padding: .75rem .9rem;
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--ink);
+  font-family: 'Inter', sans-serif; font-size: .88rem;
+  outline: none; transition: border-color .18s, box-shadow .18s; resize: none;
+}
+.fg input::placeholder, .fg textarea::placeholder { color: var(--ink3); }
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(232,96,44,.1);
+}
+
+/* ── FOOTER ── */
+.foot { background: var(--ink); padding: 2rem 0; }
+.foot__row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1.25rem;
+}
+.foot__brand { display: flex; align-items: center; gap: .65rem; }
+.foot__name  { font-size: .92rem; font-weight: 800; color: #fff; letter-spacing: -.2px; }
+.foot__loc   { font-size: .7rem; color: rgba(255,255,255,.35); margin-top: .1rem; }
+.foot__nav   { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.foot__a     { background: none; border: none; cursor: pointer; font-size: .78rem; font-weight: 500; color: rgba(255,255,255,.45); transition: color .2s; }
+.foot__a:hover { color: rgba(255,255,255,.8); }
+.foot__copy  { font-size: .7rem; color: rgba(255,255,255,.3); }
+
+/* ── MOBILE BAR ── */
+.mob-bar { display: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .nav { padding: 0 1.25rem; height: 60px; }
+  .desk-only { display: none !important; }
+  .mob-only  { display: inline-flex !important; }
+  .burger    { display: flex; }
+  .nav__links {
+    display: none; position: fixed; inset: 60px 0 0 0;
+    background: rgba(255,255,255,.97);
+    backdrop-filter: blur(20px);
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 0; z-index: 890; border-top: 1px solid var(--border);
+  }
+  .nav__links.is-open { display: flex; }
+  .nav__links .nav__a {
+    font-size: 1.1rem; font-weight: 700; color: var(--ink2);
+    padding: 1.2rem 2rem; width: 100%; text-align: center;
+    border-bottom: 1px solid var(--border);
+    min-height: 54px; display: flex; align-items: center; justify-content: center;
+  }
+  .nav__links .mob-only {
+    margin-top: 1.75rem; width: calc(100% - 3rem);
+    border-radius: 10px; padding: .95rem; font-size: .82rem;
+  }
+
+  .hero { padding-top: 60px; min-height: 100svh; }
+  .hero__inner {
+    grid-template-columns: 1fr; gap: 2.5rem;
+    padding-top: 3rem; padding-bottom: 3.5rem;
+  }
+  .hero__h1 { font-size: clamp(2.5rem, 12vw, 3.8rem); letter-spacing: -2px; }
+  .hero__p  { font-size: .95rem; }
+  .hero__btns { flex-direction: column; align-items: stretch; }
+  .hero__btns .cta-btn, .hero__btns .out-btn { width: 100%; justify-content: center; }
+
+  .stats-inner { gap: 0; flex-wrap: wrap; }
+  .stat { min-width: 50%; padding: 1.25rem 0; }
+  .stat:nth-child(odd) { border-right: 1px solid var(--border); }
+  .stat + .stat { border-left: none; }
+  .stat:nth-child(3), .stat:nth-child(4) { border-top: 1px solid var(--border); }
+
+  .sec { padding: 4.5rem 0; }
+  .bento {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "a a" "b c" "d e" "f f";
+    gap: .65rem;
+  }
+  .bc--lg { min-height: 0; }
+
+  .cgrid { grid-template-columns: 1fr; gap: 2rem; }
+  .rform { padding: 1.5rem 1.25rem; }
+  .fr2   { grid-template-columns: 1fr; }
+
+  .lunch-inner { flex-direction: column; align-items: flex-start; gap: 2rem; }
+
+  .foot__row { flex-direction: column; align-items: flex-start; gap: 1rem; }
+
+  .mob-bar {
+    display: flex; align-items: center; gap: .7rem;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(255,255,255,.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1.5px solid var(--border);
+    padding: .85rem 1.25rem;
+    padding-bottom: calc(.85rem + env(safe-area-inset-bottom));
+  }
+  .mob-bar__call {
+    flex: 1; display: flex; align-items: center; gap: .7rem;
+    text-decoration: none;
+    background: var(--off); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: .7rem .9rem;
+  }
+  .mob-bar__call > span { font-size: 1.1rem; }
+  .mob-bar__lbl { font-size: .55rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); line-height: 1; }
+  .mob-bar__num { font-size: .76rem; font-weight: 700; color: var(--ink); line-height: 1.4; }
+
+  .foot { padding-bottom: calc(2rem + 68px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 420px) {
+  .hero__h1 { font-size: 2.3rem; letter-spacing: -1.5px; }
+  .bento { grid-template-columns: 1fr; grid-template-areas: "a" "b" "c" "d" "e" "f"; }
 }
 `;
