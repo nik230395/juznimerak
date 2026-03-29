@@ -2,12 +2,45 @@
 
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 
+// ── ICONS ─────────────────────────────────────────────────────────────────────
+const P = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    style={{ display:"inline-block", verticalAlign:"middle", flexShrink:0 }} {...p}/>
+);
+const IcPin    = () => <P><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></P>;
+const IcClock  = () => <P><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></P>;
+const IcPhone  = () => <P><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 18v2.92"/></P>;
+const IcFlame  = () => <P><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></P>;
+const IcStar   = () => <P><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></P>;
+const IcLeaf   = () => <P><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></P>;
+const IcBowl   = () => <P><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9z"/><path d="M7 21h10"/><line x1="12" y1="3" x2="12" y2="5"/></P>;
+const IcWave   = () => <P><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></P>;
+const IcLayers = () => <P><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></P>;
+const IcGem    = () => <P><path d="M6 3h12l4 6-10 13L2 9l4-6z"/><path d="M2 9h20"/><path d="m9 3-3 6"/><path d="m15 3 3 6"/></P>;
+const IcHeart  = () => <P fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></P>;
+const IcCheck  = () => <P><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></P>;
+function getCatIcon(key: string): ReactNode {
+  const k = key.toLowerCase().replace(/[šś]/g,"s").replace(/[žź]/g,"z").replace(/[čć]/g,"c");
+  switch(k) {
+    case "rostilj":       return <IcFlame />;
+    case "specijaliteti": return <IcStar />;
+    case "salate":        return <IcLeaf />;
+    case "kuhinja":       return <IcBowl />;
+    case "riba":          return <IcWave />;
+    case "prilog":        return <IcLayers />;
+    case "desert":        return <IcGem />;
+    default:              return <IcStar />;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface MenuItem  { name: string; subtitle?: string; price: string; allergens?: string; }
-interface MenuCat   { key: string; label: string; emoji: string; items: MenuItem[]; }
+interface MenuCat   { key: string; label: string; items: MenuItem[]; }
 interface RevealProps { children: ReactNode; delay?: number; style?: CSSProperties; }
 
 const MENU: MenuCat[] = [
-  { key: "rostilj", label: "Roštilj", emoji: "🔥", items: [
+  { key: "rostilj", label: "Roštilj", items: [
     { name: "Mešano meso",              subtitle: "Grill Mix für 1 Person",       price: "10,90 €" },
     { name: "Pljeskavica",              subtitle: "Fleischlaibchen",              price: "6,90 €" },
     { name: "Punjena pljeskavica",      subtitle: "Gefüllte Fleischlaibchen",     price: "11,90 €", allergens: "D" },
@@ -22,7 +55,7 @@ const MENU: MenuCat[] = [
     { name: "Dinklave vešalica",        subtitle: "Gänsebraten Karree",          price: "11,00 €" },
     { name: "Svinjski kotopić",         subtitle: "Grillgeflügel vom Schwein",   price: "6,90 / 10,90 €" },
   ]},
-  { key: "specijaliteti", label: "Specijaliteti", emoji: "⭐", items: [
+  { key: "specijaliteti", label: "Specijaliteti", items: [
     { name: "Karađorđeva šnicla",       subtitle: "Karađorđeva Schnitzel",       price: "14,90 €", allergens: "A,C,G" },
     { name: "Bečka šnicla",             subtitle: "Wiener Schnitzel",            price: "12,90 €" },
     { name: "Rostfleisch",                                                         price: "14,90 €" },
@@ -30,7 +63,7 @@ const MENU: MenuCat[] = [
     { name: "Meso ispod sača za 2",     subtitle: "Für 2 Personen",             price: "19,90 €" },
     { name: "Punjene paprike sa sirom", subtitle: "Gefüllte Paprika mit Käse", price: "8,90 €", allergens: "A,C,G" },
   ]},
-  { key: "salate", label: "Salate", emoji: "🥗", items: [
+  { key: "salate", label: "Salate", items: [
     { name: "Šmarski mix",              subtitle: "für 4 Personen",              price: "13,90 €", allergens: "G" },
     { name: "Šopska salata",            subtitle: "Šopska-Salat",               price: "4,50 €", allergens: "G" },
     { name: "Dakovska salata",          subtitle: "Dakischer Salat",            price: "4,50 €" },
@@ -44,25 +77,25 @@ const MENU: MenuCat[] = [
     { name: "Ajvar",                                                              price: "1,90 €" },
     { name: "Džadzike",                                                           price: "1,90 €", allergens: "G" },
   ]},
-  { key: "kuhinja", label: "Kuhinja", emoji: "🍲", items: [
+  { key: "kuhinja", label: "Kuhinja", items: [
     { name: "Pileća ili Rind Čorba",    subtitle: "Hühner- oder Rindssuppe",   price: "4,90 €", allergens: "A" },
     { name: "Pasulj",                   subtitle: "Bohnensuppe",               price: "6,90 €", allergens: "A" },
     { name: "Sarma 1 kom.",             subtitle: "Krautroulade",              price: "2,00 €", allergens: "A" },
     { name: "Rindfleisch",                                                       price: "7,90 €", allergens: "A" },
     { name: "Sarma sa prilogom",        subtitle: "Krautroulade mit Beilage",  price: "6,90 €", allergens: "G" },
   ]},
-  { key: "riba", label: "Riba", emoji: "🐟", items: [
+  { key: "riba", label: "Riba", items: [
     { name: "Pastrmka",                 subtitle: "Forelle",                   price: "13,90 €", allergens: "D" },
     { name: "File Pangasius",           subtitle: "Fischfilet Pangasius",      price: "13,90 €", allergens: "D" },
   ]},
-  { key: "prilog", label: "Prilog", emoji: "🥖", items: [
+  { key: "prilog", label: "Prilog", items: [
     { name: "Lepinja",                  subtitle: "Fladenbrot",                price: "1,50 €", allergens: "A" },
     { name: "Pomfrit",                  subtitle: "Pommes",                    price: "2,90 €" },
     { name: "Ketchup",                                                           price: "1,00 €", allergens: "M" },
     { name: "Majonez",                  subtitle: "Mayonnaise",                price: "1,00 €", allergens: "C,G,M" },
     { name: "Senf",                                                              price: "1,00 €", allergens: "M" },
   ]},
-  { key: "desert", label: "Desert", emoji: "🍮", items: [
+  { key: "desert", label: "Desert", items: [
     { name: "Palačinke 2 kom.",         subtitle: "Palatschinken",             price: "4,50 €", allergens: "A,C,G" },
     { name: "Baklava 2 kom.",                                                    price: "4,50 €", allergens: "A,H" },
   ]},
@@ -115,19 +148,15 @@ export default function JuzniMerak() {
         if (!Array.isArray(items)) return;
         const available = items.filter(i => i.available);
         const catMap: Record<string, MenuCat> = {};
-        const CAT_META: Record<string,{key:string;emoji:string}> = {
-          "Roštilj":      { key:"Roštilj",      emoji:"🔥" },
-          "Specijaliteti":{ key:"Specijaliteti", emoji:"⭐" },
-          "Salate":       { key:"Salate",        emoji:"🥗" },
-          "Kuhinja":      { key:"Kuhinja",       emoji:"🍲" },
-          "Riba":         { key:"Riba",          emoji:"🐟" },
-          "Prilog":       { key:"Prilog",        emoji:"🥖" },
-          "Desert":       { key:"Desert",        emoji:"🍮" },
+        const CAT_KEYS: Record<string,string> = {
+          "Roštilj":"Roštilj", "Specijaliteti":"Specijaliteti",
+          "Salate":"Salate", "Kuhinja":"Kuhinja",
+          "Riba":"Riba", "Prilog":"Prilog", "Desert":"Desert",
         };
         available.forEach(item => {
           if (!catMap[item.category]) {
-            const meta = CAT_META[item.category] ?? { key: item.category, emoji: "🍴" };
-            catMap[item.category] = { key: meta.key, label: item.category, emoji: meta.emoji, items: [] };
+            const key = CAT_KEYS[item.category] ?? item.category;
+            catMap[item.category] = { key, label: item.category, items: [] };
           }
           catMap[item.category].items.push({ name: item.name, subtitle: item.subtitle ?? undefined, price: item.price, allergens: item.allergens ?? undefined });
         });
@@ -230,10 +259,10 @@ export default function JuzniMerak() {
 
               <div className="hcard__rows">
                 {([
-                  ["📍", "Adresa", "Friesenplatz 1-2\nWien 1100"],
-                  ["⏰", "Ručak", "Mo – Fr  11:00 – 16:00"],
-                  ["📞", "Telefon", "+43 68 1101 96066"],
-                ] as [string, string, string][]).map(([ic, k, v]) => (
+                  [<IcPin />, "Adresa", "Friesenplatz 1-2\nWien 1100"],
+                  [<IcClock />, "Ručak", "Mo – Fr  11:00 – 16:00"],
+                  [<IcPhone />, "Telefon", "+43 68 1101 96066"],
+                ] as [ReactNode, string, string][]).map(([ic, k, v]) => (
                   <div key={k} className="hcard__row">
                     <span className="hcard__ic">{ic}</span>
                     <div>
@@ -281,7 +310,7 @@ export default function JuzniMerak() {
                   gostoprimljivost. Autentičan ukus Balkana u Beču, sa svežim
                   namirnicama i receptima koji podsećaju na dom.
                 </p>
-                <div className="bc__emojis">🍖 &nbsp; 🌶️ &nbsp; 🔥</div>
+                <div className="bc__icons-row"><IcFlame /><IcStar /><IcLeaf /></div>
               </div>
             </Reveal>
 
@@ -294,7 +323,7 @@ export default function JuzniMerak() {
 
             <Reveal delay={80} style={{ gridArea: "c" }}>
               <div className="bc bc--off">
-                <div className="bc__icon">🥩</div>
+                <div className="bc__icon"><IcLeaf /></div>
                 <div className="bc__title">Svežina</div>
                 <div className="bc__desc">Samo najsvežiji sastojci, svaki dan</div>
               </div>
@@ -309,7 +338,7 @@ export default function JuzniMerak() {
 
             <Reveal delay={110} style={{ gridArea: "e" }}>
               <div className="bc bc--off">
-                <div className="bc__icon">❤️</div>
+                <div className="bc__icon" style={{ color:"var(--acc)" }}><IcHeart /></div>
                 <div className="bc__title">Gostoprimljivost</div>
                 <div className="bc__desc">Svaki gost je naša porodica</div>
               </div>
@@ -339,7 +368,7 @@ export default function JuzniMerak() {
             <div className="tabs">
               {dbMenu.map(c => (
                 <button key={c.key} className={`tab ${cat === c.key ? "tab--on" : ""}`} onClick={() => setCat(c.key)}>
-                  {c.emoji} {c.label}
+                  {getCatIcon(c.key)}<span style={{ marginLeft:".35rem" }}>{c.label}</span>
                 </button>
               ))}
             </div>
@@ -394,10 +423,10 @@ export default function JuzniMerak() {
             <Reveal delay={60}>
               <div className="cinfo">
                 {([
-                  ["📍", "Adresa",          "Friesenplatz 1-2\nWien 1100, Austrija"],
-                  ["📞", "Telefon",         "+43 68 1101 96066"],
-                  ["⏰", "Ručak (Mo – Fr)", "11:00 – 16:00"],
-                ] as [string,string,string][]).map(([ic, lbl, val]) => (
+                  [<IcPin />, "Adresa",          "Friesenplatz 1-2\nWien 1100, Austrija"],
+                  [<IcPhone />, "Telefon",         "+43 68 1101 96066"],
+                  [<IcClock />, "Ručak (Mo – Fr)", "11:00 – 16:00"],
+                ] as [ReactNode,string,string][]).map(([ic, lbl, val]) => (
                   <div key={lbl} className="ccard">
                     <span className="ccard__ic">{ic}</span>
                     <div>
@@ -412,7 +441,7 @@ export default function JuzniMerak() {
             <Reveal delay={100}>
               {resSent ? (
                 <div className="rform" style={{ textAlign:"center", padding:"3rem 2rem" }}>
-                  <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>✅</div>
+                  <div style={{ fontSize:"3rem", marginBottom:"1rem", color:"var(--acc)" }}><IcCheck /></div>
                   <div style={{ fontSize:"1.2rem", fontWeight:800, color:"var(--ink)", marginBottom:".5rem" }}>Hvala na rezervaciji!</div>
                   <div style={{ color:"var(--ink2)", fontSize:".9rem", marginBottom:"1.5rem" }}>Kontaktiraćemo vas uskoro za potvrdu.</div>
                   <button className="cta-btn" onClick={() => setResSent(false)}>Nova rezervacija</button>
@@ -454,6 +483,21 @@ export default function JuzniMerak() {
         </div>
       </section>
 
+      {/* MAPS */}
+      <section className="maps-sec">
+        <div className="maps-label">
+          <IcPin /><span>Friesenplatz 1-2 · Wien 1100</span>
+        </div>
+        <iframe
+          src="https://maps.google.com/maps?q=Friesenplatz+1-2,+1100+Wien,+Austria&output=embed"
+          width="100%" height="420"
+          style={{ border:0, display:"block" }}
+          allowFullScreen loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Južni Merak — Friesenplatz 1-2, Wien 1100"
+        />
+      </section>
+
       {/* FOOTER */}
       <footer className="foot">
         <div className="wrap foot__row">
@@ -474,7 +518,7 @@ export default function JuzniMerak() {
       {/* MOBILE BAR */}
       <div className="mob-bar">
         <a href="tel:+4368110196066" className="mob-bar__call">
-          <span>📞</span>
+          <span style={{ fontSize:"1.2rem" }}><IcPhone /></span>
           <div>
             <div className="mob-bar__lbl">Pozovite nas</div>
             <div className="mob-bar__num">+43 68 1101 96066</div>
@@ -668,7 +712,7 @@ body {
   padding: 1rem 0; border-bottom: 1px solid var(--border);
 }
 .hcard__row:last-of-type { border-bottom: none; }
-.hcard__ic { font-size: 1.1rem; }
+.hcard__ic { font-size: 1.1rem; display: flex; align-items: center; color: var(--acc); flex-shrink: 0; }
 .hcard__k {
   font-size: .6rem; font-weight: 700;
   letter-spacing: 1.5px; text-transform: uppercase;
@@ -751,14 +795,14 @@ body {
 .bc__label { font-size: .6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 1rem; }
 .bc--accent .bc__label { color: rgba(255,255,255,.65); }
 .bc__body  { font-size: .9rem; font-weight: 400; color: var(--ink2); line-height: 1.75; flex: 1; }
-.bc__emojis { font-size: 1.4rem; margin-top: 1.5rem; letter-spacing: 4px; }
+.bc__icons-row { display: flex; gap: .75rem; align-items: center; margin-top: 1.5rem; font-size: 1.4rem; color: var(--acc); }
 .bc__num   { font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; color: var(--ink); line-height: 1; }
 .bc--accent .bc__num { color: #fff; }
 .bc__num sup { font-size: 1.8rem; }
 .bc__num--sm { font-size: 2.5rem; }
 .bc__sub   { font-size: .78rem; font-weight: 600; color: var(--ink3); margin-top: .4rem; }
 .bc--accent .bc__sub { color: rgba(255,255,255,.75); }
-.bc__icon  { font-size: 1.7rem; margin-bottom: .75rem; }
+.bc__icon  { font-size: 1.7rem; margin-bottom: .75rem; display: flex; align-items: center; }
 .bc__title { font-size: .93rem; font-weight: 700; color: var(--ink); margin-bottom: .35rem; }
 .bc__desc  { font-size: .8rem; font-weight: 400; color: var(--ink3); line-height: 1.55; }
 .bc__time  { font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; color: var(--ink); margin-top: .4rem; }
@@ -829,7 +873,7 @@ body {
   transition: border-color .2s;
 }
 .ccard:hover { border-color: var(--border2); }
-.ccard__ic  { font-size: 1.3rem; }
+.ccard__ic  { font-size: 1.3rem; display: flex; align-items: center; color: var(--acc); flex-shrink: 0; }
 .ccard__lbl { font-size: .6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: .25rem; }
 .ccard__val { font-size: .88rem; font-weight: 500; color: var(--ink); line-height: 1.5; white-space: pre-line; }
 
@@ -852,6 +896,19 @@ body {
   border-color: var(--acc);
   box-shadow: 0 0 0 3px rgba(232,96,44,.1);
 }
+
+/* ── MAPS ── */
+.maps-sec { position: relative; border-top: 1.5px solid var(--border); }
+.maps-label {
+  position: absolute; top: 1rem; left: 50%; transform: translateX(-50%);
+  z-index: 10; background: var(--white);
+  border: 1.5px solid var(--border); border-radius: 999px;
+  padding: .45rem 1rem; display: inline-flex; align-items: center; gap: .45rem;
+  font-size: .72rem; font-weight: 600; color: var(--ink2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  white-space: nowrap;
+}
+.maps-label svg { color: var(--acc); }
 
 /* ── FOOTER ── */
 .foot { background: var(--ink); padding: 2rem 0; }
