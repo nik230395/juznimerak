@@ -12,15 +12,20 @@ export default function AdminLogin() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setLoading(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) { setError(data.error); return; }
-    router.push("/admin/dashboard");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Greška pri prijavi."); return; }
+      router.push("/admin/dashboard");
+    } catch {
+      setError("Greška pri prijavi. Pokušajte ponovo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
