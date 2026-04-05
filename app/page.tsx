@@ -39,6 +39,18 @@ function getCatIcon(key: string): ReactNode {
 interface MenuItem  { name: string; subtitle?: string; price: string; allergens?: string; }
 interface MenuCat   { key: string; label: string; items: MenuItem[]; }
 interface RevealProps { children: ReactNode; delay?: number; style?: CSSProperties; }
+interface DayMenu   { date: string; items: string; price: string|null; note: string|null; published: boolean; }
+
+const WEEK_DE = ["Mo","Di","Mi","Do","Fr"];
+function thisWeek(): string[] {
+  const today = new Date();
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  return Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    return d.toISOString().split("T")[0];
+  });
+}
 
 const MENU: MenuCat[] = [
   { key: "vorspeisen", label: "Vorspeisen", items: [
@@ -140,6 +152,7 @@ export default function JuzniMerak() {
   const [scrolled, setScrolled] = useState(false);
   const [cat, setCat]           = useState("vorspeisen");
   const [dbMenu, setDbMenu]     = useState<MenuCat[]>(MENU);
+  const [weeklyMenu, setWeeklyMenu] = useState<Record<string, DayMenu>>({});
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -173,6 +186,15 @@ export default function JuzniMerak() {
           .filter(k => catMap[k])
           .map(k => catMap[k]);
         if (ordered.length > 0) { setDbMenu(ordered); setCat(ordered[0].key); }
+      })
+      .catch(() => {});
+    fetch("/api/daily-menu")
+      .then(r => r.json())
+      .then((data: DayMenu[]) => {
+        if (!Array.isArray(data)) return;
+        const map: Record<string, DayMenu> = {};
+        data.filter(m => m.published).forEach(m => { map[m.date] = m; });
+        setWeeklyMenu(map);
       })
       .catch(() => {});
     return () => window.removeEventListener("scroll", fn);
@@ -392,19 +414,46 @@ export default function JuzniMerak() {
         </div>
       </section>
 
-      {/* LUNCH BAND */}
-      <section className="lunch-sec">
-        <div className="wrap lunch-inner">
-          <Reveal style={{ flex: "1" }}>
-            <div className="sec-eyebrow sec-eyebrow--light">Mittagsmenü</div>
-            <h2 className="lunch-h">Svaki dan svježe<br />kuhana jela</h2>
-            <p className="lunch-p">Ponedeljak – Petak &nbsp;·&nbsp; 11:00 – 16:00</p>
+      {/* MITTAGSMENÜ */}
+      <section className="lunch-sec" id="mittagsmenu">
+        <div className="wrap">
+          <Reveal>
+            <div className="lunch-top">
+              <div>
+                <div className="sec-eyebrow">Mittagsmenü</div>
+                <h2 className="lunch-h">Diese Woche <span className="acc-txt">frisch</span></h2>
+                <p className="lunch-p">Montag – Freitag &nbsp;·&nbsp; 11:00 – 16:00</p>
+              </div>
+              <a href="tel:+4368110196066" className="cta-btn cta-btn--lg">+43 68 1101 96066</a>
+            </div>
           </Reveal>
-          <Reveal delay={80} style={{ flexShrink: 0 }}>
-            <a href="tel:+4368110196066" className="cta-btn cta-btn--lg cta-btn--white">
-              +43 68 1101 96066
-            </a>
-          </Reveal>
+
+          <div className="week-grid">
+            {thisWeek().map((date, i) => {
+              const m = weeklyMenu[date];
+              const items: string[] = m ? (JSON.parse(m.items) as string[]) : [];
+              const isToday = date === new Date().toISOString().split("T")[0];
+              return (
+                <Reveal key={date} delay={i * 50}>
+                  <div className={`day-card${isToday ? " day-card--today" : ""}${!m ? " day-card--empty" : ""}`}>
+                    <div className="day-card__head">
+                      <span className="day-card__wd">{WEEK_DE[i]}</span>
+                      <span className="day-card__dt">{date.slice(8)}.{date.slice(5,7)}.</span>
+                      {isToday && <span className="day-card__badge">Heute</span>}
+                    </div>
+                    {items.length > 0 ? (
+                      <ul className="day-card__list">
+                        {items.map((it, j) => <li key={j}>{it}</li>)}
+                      </ul>
+                    ) : (
+                      <p className="day-card__none">—</p>
+                    )}
+                    {m?.price && <div className="day-card__price">{m.price}</div>}
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -806,24 +855,36 @@ body {
 
 .allergy-note { font-size: .7rem; color: var(--ink3); }
 
-/* ── LUNCH ── */
-.lunch-sec {
-  background: var(--off); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); padding: 5rem 0;
-}
-.lunch-inner {
-  max-width: 1120px; margin: 0 auto; padding: 0 2rem;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 3rem; flex-wrap: wrap;
-}
+/* ── MITTAGSMENÜ ── */
+.lunch-sec { background: var(--off); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); padding: 5rem 0; }
+.lunch-top { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2.5rem; }
 .lunch-h {
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 900; letter-spacing: -1.5px;
-  color: var(--ink); line-height: 1.1; margin-bottom: .6rem;
+  color: var(--ink); line-height: 1.1; margin-bottom: .5rem;
 }
-.lunch-p {
-  font-size: .82rem; font-weight: 500;
-  color: var(--ink3); letter-spacing: .5px;
+.lunch-p { font-size: .82rem; font-weight: 500; color: var(--ink3); letter-spacing: .5px; }
+
+.week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+.day-card {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 1.1rem;
+  min-height: 170px; display: flex; flex-direction: column; gap: .4rem;
+  transition: box-shadow .2s, border-color .2s;
 }
+.day-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); border-color: var(--border2); }
+.day-card--today { border-color: var(--acc); background: var(--acc-soft); }
+.day-card--empty { opacity: .5; }
+.day-card__head { display: flex; align-items: center; gap: .4rem; margin-bottom: .3rem; }
+.day-card__wd { font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink3); }
+.day-card--today .day-card__wd { color: var(--acc); }
+.day-card__dt { font-size: .72rem; font-weight: 600; color: var(--ink2); }
+.day-card__badge { margin-left: auto; font-size: .58rem; font-weight: 700; background: var(--acc); color: #fff; padding: .15rem .45rem; border-radius: 999px; }
+.day-card__list { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 0; }
+.day-card__list li { font-size: .78rem; font-weight: 500; color: var(--ink2); padding: .3rem 0; border-bottom: 1px dashed var(--border); line-height: 1.4; }
+.day-card__list li:last-child { border-bottom: none; }
+.day-card__none { font-size: .85rem; color: var(--ink3); flex: 1; display: flex; align-items: center; margin: 0; }
+.day-card__price { font-size: .82rem; font-weight: 800; color: var(--acc); margin-top: auto; padding-top: .4rem; }
 
 /* ── CONTACT ── */
 .cgrid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; align-items: start; margin-top: 3rem; }
@@ -942,7 +1003,9 @@ body {
   .rform { padding: 1.5rem 1.25rem; }
   .fr2   { grid-template-columns: 1fr; }
 
-  .lunch-inner { flex-direction: column; align-items: flex-start; gap: 2rem; }
+  .lunch-top { flex-direction: column; align-items: flex-start; }
+  .week-grid { grid-template-columns: repeat(3, 1fr); }
+  .week-grid > div:nth-child(4), .week-grid > div:nth-child(5) { grid-column: span 1; }
 
   .foot__row { flex-direction: column; align-items: flex-start; gap: 1rem; }
 
