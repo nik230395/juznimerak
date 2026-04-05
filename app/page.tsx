@@ -30,6 +30,7 @@ function getCatIcon(key: string): ReactNode {
     case "riba":          return <IcWave />;
     case "prilog":        return <IcLayers />;
     case "desert":        return <IcGem />;
+    case "vorspeisen":    return <IcStar />;
     default:              return <IcStar />;
   }
 }
@@ -40,64 +41,69 @@ interface MenuCat   { key: string; label: string; items: MenuItem[]; }
 interface RevealProps { children: ReactNode; delay?: number; style?: CSSProperties; }
 
 const MENU: MenuCat[] = [
-  { key: "rostilj", label: "Roštilj", items: [
-    { name: "Mešano meso",              subtitle: "Grill Mix für 1 Person",       price: "10,90 €" },
-    { name: "Pljeskavica",              subtitle: "Fleischlaibchen",              price: "6,90 €" },
-    { name: "Punjena pljeskavica",      subtitle: "Gefüllte Fleischlaibchen",     price: "11,90 €", allergens: "D" },
-    { name: "Ćevapi 200 / 400 g",                                                 price: "6,90 / 10,90 €" },
-    { name: "Svinjski vrat 200 / 400 g",subtitle: "Schweinssteaks",              price: "6,90 / 10,90 €" },
-    { name: "Paštica 200 / 400 g",      subtitle: "Bauchfleisch",                price: "6,90 / 10,90 €" },
-    { name: "Batk 200 / 400 g",         subtitle: "Hühnenbein",                  price: "6,90 / 10,90 €" },
-    { name: "Kobasice 200 / 400 g",     subtitle: "Grillwürstel",                price: "6,90 / 10,90 €" },
-    { name: "Punjena piletina",         subtitle: "Gefüllte Hühnerbrust",        price: "13,00 €" },
-    { name: "Punjena vešalica 400 g",   subtitle: "Gefüllte Karre",              price: "13,90 €", allergens: "G" },
-    { name: "Bela vešalica 200 / 400 g",subtitle: "Weißes Karee",               price: "6,90 / 10,90 €" },
-    { name: "Dinklave vešalica",        subtitle: "Gänsebraten Karree",          price: "11,00 €" },
-    { name: "Svinjski kotopić",         subtitle: "Grillgeflügel vom Schwein",   price: "6,90 / 10,90 €" },
-  ]},
-  { key: "specijaliteti", label: "Specijaliteti", items: [
-    { name: "Karađorđeva šnicla",       subtitle: "Karađorđeva Schnitzel",       price: "14,90 €", allergens: "A,C,G" },
-    { name: "Bečka šnicla",             subtitle: "Wiener Schnitzel",            price: "12,90 €" },
-    { name: "Rostfleisch",                                                         price: "14,90 €" },
-    { name: "Pečena piletina",          subtitle: "Hühnerbraten",               price: "15,90 €", allergens: "G" },
-    { name: "Meso ispod sača za 2",     subtitle: "Für 2 Personen",             price: "19,90 €" },
-    { name: "Punjene paprike sa sirom", subtitle: "Gefüllte Paprika mit Käse", price: "8,90 €", allergens: "A,C,G" },
-  ]},
-  { key: "salate", label: "Salate", items: [
-    { name: "Šmarski mix",              subtitle: "für 4 Personen",              price: "13,90 €", allergens: "G" },
-    { name: "Šopska salata",            subtitle: "Šopska-Salat",               price: "4,50 €", allergens: "G" },
-    { name: "Dakovska salata",          subtitle: "Dakischer Salat",            price: "4,50 €" },
-    { name: "Paradajz salata",          subtitle: "Tomatensalat",               price: "4,50 €" },
-    { name: "Krastavac salata",         subtitle: "Gurkensalat",                price: "4,50 €" },
-    { name: "Kupus salata",             subtitle: "Krautsalat",                 price: "4,50 €" },
-    { name: "Kiseli kupus",             subtitle: "Sauerkraut",                 price: "4,50 €" },
-    { name: "Mešana salata",            subtitle: "Gemischter Salat",           price: "4,50 €" },
-    { name: "Krompir salata",           subtitle: "Kartoffelsalat",             price: "3,90 €" },
-    { name: "Kajmak",                   subtitle: "Käsmus",                     price: "1,90 €", allergens: "G" },
-    { name: "Ajvar",                                                              price: "1,90 €" },
-    { name: "Džadzike",                                                           price: "1,90 €", allergens: "G" },
+  { key: "vorspeisen", label: "Vorspeisen", items: [
+    { name: "Predjelo za 1 osobu",      subtitle: "Vorspeise für 1 Person",        price: "5,90 €",  allergens: "G" },
+    { name: "Predjelo za 4 osobe",      subtitle: "Vorspeise für 4 Personen",      price: "22,90 €", allergens: "G" },
+    { name: "Pihtije",                  subtitle: "Sülze 300 g (Saisongericht)",   price: "7,90 €" },
   ]},
   { key: "kuhinja", label: "Kuhinja", items: [
-    { name: "Pileća ili Rind Čorba",    subtitle: "Hühner- oder Rindssuppe",   price: "4,90 €", allergens: "A" },
-    { name: "Pasulj",                   subtitle: "Bohnensuppe",               price: "6,90 €", allergens: "A" },
-    { name: "Sarma 1 kom.",             subtitle: "Krautroulade",              price: "2,00 €", allergens: "A" },
-    { name: "Rindfleisch",                                                       price: "7,90 €", allergens: "A" },
-    { name: "Sarma sa prilogom",        subtitle: "Krautroulade mit Beilage",  price: "6,90 €", allergens: "G" },
+    { name: "Pileća ili teleća čorba",  subtitle: "Hühner- oder Rindsuppe",        price: "5,90 €", allergens: "A" },
+    { name: "Pasulj",                   subtitle: "Bohnensuppe",                   price: "6,90 €", allergens: "A" },
+    { name: "Sarma 1 kom.",             subtitle: "Krautroulade 1 Stk. (zum Mitnehmen)", price: "2,00 €", allergens: "A" },
+    { name: "Juneći gulaš",             subtitle: "Rindgulasch",                   price: "7,90 €", allergens: "A" },
+    { name: "Sarma sa prilogom",        subtitle: "Krautroulade mit Beilage",      price: "6,90 €", allergens: "G" },
+  ]},
+  { key: "rostilj", label: "Roštilj", items: [
+    { name: "Merak daška za 4 osobe",   subtitle: "Merak Platte für 4 Personen",   price: "59,90 €", allergens: "A,C,G" },
+    { name: "Mešano meso za 1 osobu",   subtitle: "Grill Mix für 1 Person",        price: "10,90 €" },
+    { name: "Pljeskavica",              subtitle: "Fleischlaibchen",               price: "6,90 €" },
+    { name: "Punjena pljeskavica",      subtitle: "Gefüllte Fleischlaibchen",      price: "11,90 €", allergens: "G" },
+    { name: "Ćevapi 200 / 400 g",       subtitle: "Cevapcici 200/400 g",           price: "6,90 / 10,90 €" },
+    { name: "Vrat 200 / 400 g",         subtitle: "Schopfbraten 200/400 g",        price: "6,90 / 10,90 €" },
+    { name: "Panceta 200 / 400 g",      subtitle: "Bauchfleisch 200/400 g",        price: "6,90 / 10,90 €" },
+    { name: "Batak 200 / 400 g",        subtitle: "Hühnerkeule 200/400 g",         price: "6,90 / 10,90 €" },
+    { name: "Kobasica 200 / 400 g",     subtitle: "Grillwürstel 200/400 g",        price: "6,90 / 10,90 €" },
+    { name: "Punjeni batak 400 g",      subtitle: "Gefüllte Hühnerkeule 400 g",    price: "13,90 €", allergens: "G" },
+  ]},
+  { key: "specijaliteti", label: "Specijaliteti", items: [
+    { name: "Karađorđeva šnicla",       subtitle: "Karađorđe's Schnitzel",         price: "14,90 €", allergens: "A,C,G" },
+    { name: "Bečka šnicla",             subtitle: "Wiener Schnitzel",              price: "12,90 €", allergens: "A,C,G" },
+    { name: "Teletina ispod sača",      subtitle: "Rindfleisch",                   price: "16,90 €" },
+    { name: "Pileće belo u šampinjon sosu", subtitle: "Hühnerbrust in Champignonsauce", price: "14,90 €", allergens: "G" },
+    { name: "Merak tiganj za 2 osobe",  subtitle: "Merak Pfanne für 2 Personen",   price: "18,90 €", allergens: "G" },
+    { name: "Punjene paprike sa sirom", subtitle: "Gefüllte Paprika mit Käse",     price: "8,50 €",  allergens: "A,C,G" },
   ]},
   { key: "riba", label: "Riba", items: [
-    { name: "Pastrmka",                 subtitle: "Forelle",                   price: "13,90 €", allergens: "D" },
-    { name: "File Pangasius",           subtitle: "Fischfilet Pangasius",      price: "13,90 €", allergens: "D" },
+    { name: "Pastrmka",                 subtitle: "Forelle",                       price: "13,90 €", allergens: "D" },
+    { name: "File pangasius",           subtitle: "Fischfilet Pangasius",          price: "13,90 €", allergens: "D" },
   ]},
   { key: "prilog", label: "Prilog", items: [
-    { name: "Lepinja",                  subtitle: "Fladenbrot",                price: "1,50 €", allergens: "A" },
-    { name: "Pomfrit",                  subtitle: "Pommes",                    price: "2,90 €" },
-    { name: "Ketchup",                                                           price: "1,00 €", allergens: "M" },
-    { name: "Majonez",                  subtitle: "Mayonnaise",                price: "1,00 €", allergens: "C,G,M" },
-    { name: "Senf",                                                              price: "1,00 €", allergens: "M" },
+    { name: "Lepinja",                  subtitle: "Fladenbrot",                    price: "1,50 €", allergens: "A" },
+    { name: "Pomfrit",                  subtitle: "Pommes",                        price: "2,90 €" },
+    { name: "Ketchup",                                                              price: "1,00 €", allergens: "M" },
+    { name: "Majonez",                  subtitle: "Mayonnaise",                    price: "1,00 €", allergens: "C,G,M" },
+    { name: "Senf",                                                                 price: "1,00 €", allergens: "M" },
+  ]},
+  { key: "salate", label: "Salate", items: [
+    { name: "Šemački voz za 4 osobe",   subtitle: "Šemački voz für 4 Personen",    price: "13,90 €", allergens: "G" },
+    { name: "Dupla salata",             subtitle: "Doppelter Salat",               price: "8,50 €" },
+    { name: "Šopska salata",            subtitle: "Schopska-Salat",                price: "4,50 €", allergens: "G" },
+    { name: "Srpska salata",            subtitle: "Serbischer Salat",              price: "4,50 €" },
+    { name: "Paradajz salata",          subtitle: "Tomatensalat",                  price: "4,50 €" },
+    { name: "Krastavac salata",         subtitle: "Gurkensalat",                   price: "4,50 €" },
+    { name: "Kupus salata",             subtitle: "Krautsalat",                    price: "4,50 €" },
+    { name: "Kiseli kupus",             subtitle: "Sauerkraut",                    price: "4,50 €" },
+    { name: "Mešana salata",            subtitle: "Gemischter Salat",              price: "4,50 €" },
+    { name: "Krompir salata",           subtitle: "Kartoffelsalat",                price: "4,50 €" },
+    { name: "Ljuta paprika",            subtitle: "Paprika (scharf)",              price: "1,00 €" },
+    { name: "Slatka paprika",           subtitle: "Paprika (mild)",                price: "1,50 €" },
+    { name: "Kajmak",                                                               price: "1,90 €", allergens: "G" },
+    { name: "Ajvar",                                                                price: "1,50 €" },
+    { name: "Urnebes",                                                              price: "1,50 €", allergens: "G" },
   ]},
   { key: "desert", label: "Desert", items: [
-    { name: "Palačinke 2 kom.",         subtitle: "Palatschinken",             price: "4,50 €", allergens: "A,C,G" },
-    { name: "Baklava 2 kom.",                                                    price: "4,50 €", allergens: "A,H" },
+    { name: "Palačinke 2 kom.",         subtitle: "Palatschinken 2 Stk.",          price: "4,50 €", allergens: "A,C,G" },
+    { name: "Baklava 2 kom.",           subtitle: "Baklava 2 Stk.",                price: "4,50 €", allergens: "A,H" },
   ]},
 ];
 
@@ -132,11 +138,8 @@ function Reveal({ children, delay = 0, style = {} }: RevealProps) {
 export default function JuzniMerak() {
   const [open, setOpen]         = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [cat, setCat]           = useState("Roštilj");
+  const [cat, setCat]           = useState("vorspeisen");
   const [dbMenu, setDbMenu]     = useState<MenuCat[]>(MENU);
-  const [resForm, setResForm]   = useState({ firstName:"", lastName:"", phone:"", date:"", time:"19:00", guests:"2", occasion:"", note:"" });
-  const [resSent, setResSent]   = useState(false);
-  const [resSending, setResSending] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -149,18 +152,24 @@ export default function JuzniMerak() {
         const available = items.filter(i => i.available);
         const catMap: Record<string, MenuCat> = {};
         const CAT_KEYS: Record<string,string> = {
-          "Roštilj":"Roštilj", "Specijaliteti":"Specijaliteti",
-          "Salate":"Salate", "Kuhinja":"Kuhinja",
-          "Riba":"Riba", "Prilog":"Prilog", "Desert":"Desert",
+          "Vorspeisen":"vorspeisen", "Kuhinja":"kuhinja", "Roštilj":"rostilj",
+          "Specijaliteti":"specijaliteti", "Riba":"riba", "Prilog":"prilog",
+          "Salate":"salate", "Desert":"desert",
+        };
+        const CAT_LABELS: Record<string,string> = {
+          "Vorspeisen":"Vorspeisen", "Kuhinja":"Kuhinja", "Roštilj":"Roštilj",
+          "Specijaliteti":"Specijaliteti", "Riba":"Riba", "Prilog":"Prilog",
+          "Salate":"Salate", "Desert":"Desert",
         };
         available.forEach(item => {
           if (!catMap[item.category]) {
-            const key = CAT_KEYS[item.category] ?? item.category;
-            catMap[item.category] = { key, label: item.category, items: [] };
+            const key = CAT_KEYS[item.category] ?? item.category.toLowerCase();
+            const label = CAT_LABELS[item.category] ?? item.category;
+            catMap[item.category] = { key, label, items: [] };
           }
           catMap[item.category].items.push({ name: item.name, subtitle: item.subtitle ?? undefined, price: item.price, allergens: item.allergens ?? undefined });
         });
-        const ordered = ["Roštilj","Specijaliteti","Salate","Kuhinja","Riba","Prilog","Desert"]
+        const ordered = ["Vorspeisen","Kuhinja","Roštilj","Specijaliteti","Riba","Prilog","Salate","Desert"]
           .filter(k => catMap[k])
           .map(k => catMap[k]);
         if (ordered.length > 0) { setDbMenu(ordered); setCat(ordered[0].key); }
@@ -173,18 +182,6 @@ export default function JuzniMerak() {
     document.getElementById(NMAP[label] ?? label)?.scrollIntoView({ behavior: "smooth" });
     setOpen(false);
   };
-
-  async function submitReservation(e: React.FormEvent) {
-    e.preventDefault();
-    setResSending(true);
-    await fetch("/api/reservations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...resForm, guests: Number(resForm.guests) }),
-    });
-    setResSending(false);
-    setResSent(true);
-  }
 
   const active = dbMenu.find(c => c.key === cat) ?? dbMenu[0];
 
@@ -203,11 +200,11 @@ export default function JuzniMerak() {
           {NAV.map(n => (
             <button key={n} className="nav__a" onClick={() => go(n)}>{n}</button>
           ))}
-          <button className="cta-btn mob-only" onClick={() => go("Kontakt")}>Rezerviši</button>
+          <a href="tel:+4368110196066" className="cta-btn mob-only">Pozovite nas</a>
         </nav>
 
         <div className="nav__end">
-          <button className="cta-btn desk-only" onClick={() => go("Kontakt")}>Rezerviši sto</button>
+          <a href="tel:+4368110196066" className="cta-btn desk-only">+43 68 1101 96066</a>
           <button className="burger" onClick={() => setOpen(!open)} aria-label="menu">
             <span className={open ? "r45"  : ""} />
             <span className={open ? "fade" : ""} />
@@ -245,7 +242,7 @@ export default function JuzniMerak() {
             <Reveal delay={180}>
               <div className="hero__btns">
                 <button className="cta-btn cta-btn--lg" onClick={() => go("Jelovnik")}>Pogledaj jelovnik</button>
-                <button className="out-btn out-btn--lg" onClick={() => go("Kontakt")}>Rezerviši sto →</button>
+                <a href="tel:+4368110196066" className="out-btn out-btn--lg">+43 68 1101 96066 →</a>
               </div>
             </Reveal>
           </div>
@@ -273,9 +270,9 @@ export default function JuzniMerak() {
                 ))}
               </div>
 
-              <button className="cta-btn" style={{ width: "100%", marginTop: "1.5rem" }} onClick={() => go("Kontakt")}>
-                Rezerviši sto
-              </button>
+              <a href="tel:+4368110196066" className="cta-btn" style={{ width: "100%", marginTop: "1.5rem", display:"block", textAlign:"center" }}>
+                Pozovite nas
+              </a>
             </div>
           </Reveal>
         </div>
@@ -415,71 +412,36 @@ export default function JuzniMerak() {
       <section id="kontakt" className="sec">
         <div className="wrap">
           <Reveal>
-            <div className="sec-eyebrow">Rezervacija</div>
-            <h2 className="sec-h2">Rezervišite <span className="acc-txt">vaš sto</span></h2>
+            <div className="sec-eyebrow">Kontakt</div>
+            <h2 className="sec-h2">Pronađite <span className="acc-txt">nas</span></h2>
+            <p className="sec-p">Für Reservierungen rufen Sie uns bitte an.</p>
           </Reveal>
 
-          <div className="cgrid">
-            <Reveal delay={60}>
-              <div className="cinfo">
-                {([
-                  [<IcPin />, "Adresa",          "Friesenplatz 1-2\nWien 1100, Austrija"],
-                  [<IcPhone />, "Telefon",         "+43 68 1101 96066"],
-                  [<IcClock />, "Ručak (Mo – Fr)", "11:00 – 16:00"],
-                ] as [ReactNode,string,string][]).map(([ic, lbl, val]) => (
-                  <div key={lbl} className="ccard">
-                    <span className="ccard__ic">{ic}</span>
-                    <div>
-                      <div className="ccard__lbl">{lbl}</div>
-                      <div className="ccard__val">{val}</div>
-                    </div>
+          <Reveal delay={60}>
+            <div className="cinfo">
+              {([
+                [<IcPin />, "Adresa",          "Friesenplatz 1-2\nWien 1100, Austrija"],
+                [<IcPhone />, "Telefon",         "+43 68 1101 96066"],
+                [<IcClock />, "Ručak (Mo – Fr)", "11:00 – 16:00"],
+              ] as [ReactNode,string,string][]).map(([ic, lbl, val]) => (
+                <div key={lbl} className="ccard">
+                  <span className="ccard__ic">{ic}</span>
+                  <div>
+                    <div className="ccard__lbl">{lbl}</div>
+                    <div className="ccard__val">{val}</div>
                   </div>
-                ))}
-              </div>
-            </Reveal>
-
-            <Reveal delay={100}>
-              {resSent ? (
-                <div className="rform" style={{ textAlign:"center", padding:"3rem 2rem" }}>
-                  <div style={{ fontSize:"3rem", marginBottom:"1rem", color:"var(--acc)" }}><IcCheck /></div>
-                  <div style={{ fontSize:"1.2rem", fontWeight:800, color:"var(--ink)", marginBottom:".5rem" }}>Hvala na rezervaciji!</div>
-                  <div style={{ color:"var(--ink2)", fontSize:".9rem", marginBottom:"1.5rem" }}>Kontaktiraćemo vas uskoro za potvrdu.</div>
-                  <button className="cta-btn" onClick={() => setResSent(false)}>Nova rezervacija</button>
                 </div>
-              ) : (
-                <form className="rform" onSubmit={submitReservation}>
-                  <div className="fr2">
-                    <div className="fg"><label>Ime</label><input required type="text" placeholder="Vaše ime" value={resForm.firstName} onChange={e => setResForm(f => ({ ...f, firstName: e.target.value }))} /></div>
-                    <div className="fg"><label>Prezime</label><input required type="text" placeholder="Vaše prezime" value={resForm.lastName} onChange={e => setResForm(f => ({ ...f, lastName: e.target.value }))} /></div>
-                  </div>
-                  <div className="fr2">
-                    <div className="fg"><label>Telefon</label><input required type="tel" placeholder="+43 …" value={resForm.phone} onChange={e => setResForm(f => ({ ...f, phone: e.target.value }))} /></div>
-                    <div className="fg"><label>Datum</label><input required type="date" value={resForm.date} onChange={e => setResForm(f => ({ ...f, date: e.target.value }))} /></div>
-                  </div>
-                  <div className="fr2">
-                    <div className="fg"><label>Vreme</label><input required type="time" value={resForm.time} onChange={e => setResForm(f => ({ ...f, time: e.target.value }))} /></div>
-                    <div className="fg">
-                      <label>Broj gostiju</label>
-                      <select value={resForm.guests} onChange={e => setResForm(f => ({ ...f, guests: e.target.value }))}>
-                        {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} {n===1?"gost":"gosta"}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="fg">
-                    <label>Povod (opciono)</label>
-                    <input type="text" placeholder="Rođendan, godišnjica…" value={resForm.occasion} onChange={e => setResForm(f => ({ ...f, occasion: e.target.value }))} />
-                  </div>
-                  <div className="fg">
-                    <label>Napomena</label>
-                    <textarea placeholder="Alergije, posebne želje…" rows={3} value={resForm.note} onChange={e => setResForm(f => ({ ...f, note: e.target.value }))} />
-                  </div>
-                  <button type="submit" disabled={resSending} className="cta-btn cta-btn--lg" style={{ width: "100%", marginTop: ".5rem" }}>
-                    {resSending ? "Slanje…" : "Potvrdi rezervaciju"}
-                  </button>
-                </form>
-              )}
-            </Reveal>
-          </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div style={{ marginTop:"2rem" }}>
+              <a href="tel:+4368110196066" className="cta-btn cta-btn--lg">
+                <IcPhone /> &nbsp; +43 68 1101 96066
+              </a>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -524,9 +486,9 @@ export default function JuzniMerak() {
             <div className="mob-bar__num">+43 68 1101 96066</div>
           </div>
         </a>
-        <button className="cta-btn" style={{ flexShrink:0, borderRadius:"12px", padding:".85rem 1.3rem", fontSize:".72rem" }} onClick={() => go("Kontakt")}>
-          Rezerviši
-        </button>
+        <a href="tel:+4368110196066" className="cta-btn" style={{ flexShrink:0, borderRadius:"12px", padding:".85rem 1.3rem", fontSize:".72rem" }}>
+          Pozovite
+        </a>
       </div>
     </>
   );

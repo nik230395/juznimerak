@@ -5,7 +5,6 @@ import { ReactNode } from "react";
 const links = [
   { href: "/admin/dashboard",    label: "Dashboard",    icon: "📊" },
   { href: "/admin/menu",         label: "Speisekarte",  icon: "🍽️" },
-  { href: "/admin/reservations", label: "Rezervacije",  icon: "📅" },
   { href: "/admin/daily-menu",   label: "Dnevni Menü",  icon: "☀️" },
 ];
 
